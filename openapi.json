@@ -1,0 +1,3662 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "Kinopoisk Unofficial API",
+    "description": "Kinopoisk Unofficial API предоставляет доступ к данным сайта https://www.kinopoisk.ru. Для доступа вы должны получить <b>токен</b>, который будет доступен после регистрации на <a href=\"https://kinopoiskapiunofficial.tech\">https://kinopoiskapiunofficial.tech</a> </br> <b>Ограничения:</b>  лимитов на общее кол-во описаны тут https://kinopoiskapiunofficial.tech/rates. Так же есть лимиты на кол-во запросов в секунду. </br> Каждый пользователь имеет ограничение в <b>25 req/sec</b>. </br> <b>Некоторые</b> эндпоинты имеют свои собственные ограничения, они указаны в описании для статуса <b>429</b>. </br>",
+    "contact": {
+      "name": "Support",
+      "email": "support@kinopoiskapiunofficial.tech"
+    },
+    "version": "2.0.1"
+  },
+  "servers": [
+    {
+      "url": "https://kinopoiskapiunofficial.tech",
+      "description": "Main (production) server"
+    }
+  ],
+  "security": [
+    {
+      "ApiKeyAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "name": "films",
+      "description": "Набор методов для работы с данными о фильмах"
+    },
+    {
+      "name": "staff",
+      "description": "Набор методов для работы с данными об актерах, режиссерах и т.д."
+    }
+  ],
+  "paths": {
+    "/api/v2.2/films/{id}": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить данные о фильме по kinopoisk id",
+        "description": "Данный эндпоинт возвращает базовые данные о фильме. Поле <b>lastSync</b> показывает дату последнего обновления данных.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Film"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "404": {
+            "description": "Фильм не найден"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/seasons": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить данные о сезонах для сериала по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает данные о сезонах для сериала.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/facts": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить данные о фактах и ошибках в фильме по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает список фактов и ошибок в фильме. <br> type - <b>FACT</b>, обозначает интересный факт о фильме. <br> type - <b>BLOOPER</b>, обозначает ошибку в фильме.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/distributions": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить данные о прокате фильма по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает данные о прокате в разных странах.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DistributionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/box_office": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить данные о бюджете и сборах фильма по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает данные о бюджете и сборах.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BoxOfficeResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/awards": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить данные о наградах фильма по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает данные о наградах и премиях фильма.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AwardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/videos": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить трейлеры,тизеры,видео для фильма по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает трейлеры,тизеры,видео для фильма по kinopoisk film id. В данный момент доступно три site:  <br/> <ul><li>YOUTUBE - в этом случае <b>url</b> это просто ссылка на youtube видео.</li><li>YANDEX_DISK - в этом случае <b>url</b> это ссылка на yandex disk.</li><li>KINOPOISK_WIDGET - в этом случае <b>url</b> это ссылка на кинопоиск виджет. <b>Видео доступно только с РФ ip</b>. Например https://widgets.kinopoisk.ru/discovery/trailer/123573?onlyPlayer=1&autoplay=1&cover=1. Если вы хотите вставить этот виджет на вашу страницу, вы можете сделать следующее:  <br/><br/>&lt;script src=&quot;https://unpkg.com/@ungap/custom-elements-builtin&quot;&gt;&lt;/script&gt;<br/>&lt;script type=&quot;module&quot; src=&quot;https://unpkg.com/x-frame-bypass&quot;&gt;&lt;/script&gt;<br/>&lt;iframe is=&quot;x-frame-bypass&quot; src=&quot;https://widgets.kinopoisk.ru/discovery/trailer/167560?onlyPlayer=1&amp;autoplay=1&amp;cover=1&quot; width=&quot;500&quot; height=&quot;500&quot;&gt;&lt;/iframe&gt;</li></ul>",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VideoResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/similars": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список похожих фильмов по kinopoisk film id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SimilarFilmResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/relations": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список связанных фильмов по kinopoisk film id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RelatedFilmResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/images": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить изображения(кадры, постеры, фан-арты, обои и т.д.) связанные с фильмом по kinopoisk film id",
+        "description": "Данный эндпоинт возвращает изображения связанные с фильмом с пагинацией. Каждая страница содержит <b>не более чем 20 фильмов</b>.</br> Доступные изображения:</br> <ul> <li>STILL - кадры</li> <li>SHOOTING - изображения со съемок</li> <li>POSTER - постеры</li> <li>FAN_ART - фан-арты</li> <li>PROMO - промо</li> <li>CONCEPT - концепт-арты</li> <li>WALLPAPER - обои</li> <li>COVER - обложки</li> <li>SCREENSHOT - скриншоты</li> </ul> ",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "тип изображения",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "STILL",
+              "enum": [
+                "STILL",
+                "SHOOTING",
+                "POSTER",
+                "FAN_ART",
+                "PROMO",
+                "CONCEPT",
+                "WALLPAPER",
+                "COVER",
+                "SCREENSHOT",
+                "UNKNOWN"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImageResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/reviews": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список рецензии зрителей по kinopoisk film id",
+        "description": "Возвращает список рецензии зрителей с пагинацией. Каждая страница содержит не более чем 20 рецензий.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "тип сортировки",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "DATE_DESC",
+              "enum": [
+                "DATE_ASC",
+                "DATE_DESC",
+                "USER_POSITIVE_RATING_ASC",
+                "USER_POSITIVE_RATING_DESC",
+                "USER_NEGATIVE_RATING_ASC",
+                "USER_NEGATIVE_RATING_DESC"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/{id}/external_sources": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список сайтов, где можно посмотреть фильм по kinopoisk film id",
+        "description": "Возвращает список сайтов с пагинацией. Каждая страница содержит не более чем 20 рецензий.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ExternalSourceResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/collections": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список фильмов из различных топов или коллекций. Например https://www.kinopoisk.ru/top/lists/58/",
+        "description": "Возвращает список фильмов с пагинацией. Каждая страница содержит не более чем 20 фильмов.",
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "description": "тип топа или коллекции",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "TOP_POPULAR_ALL",
+              "enum": [
+                "TOP_POPULAR_ALL",
+                "TOP_POPULAR_MOVIES",
+                "TOP_250_TV_SHOWS",
+                "TOP_250_MOVIES",
+                "VAMPIRE_THEME",
+                "COMICS_THEME",
+                "CLOSES_RELEASES",
+                "FAMILY",
+                "OSKAR_WINNERS_2021",
+                "LOVE_THEME",
+                "ZOMBIE_THEME",
+                "CATASTROPHE_THEME",
+                "KIDS_ANIMATION_THEME",
+                "POPULAR_SERIES",
+                "TOP_100_GREATEST_MOVIES_XXI",
+                "PROGRAMMERS_THEME"
+              ]
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilmCollectionResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/premieres": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список кинопремьер",
+        "description": "Данный эндпоинт возвращает список кинопремьер. Например https://www.kinopoisk.ru/premiere/",
+        "parameters": [
+          {
+            "name": "year",
+            "in": "query",
+            "description": "год релиза",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "month",
+            "in": "query",
+            "description": "месяц релиза",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "JANUARY",
+                "FEBRUARY",
+                "MARCH",
+                "APRIL",
+                "MAY",
+                "JUNE",
+                "JULY",
+                "AUGUST",
+                "SEPTEMBER",
+                "OCTOBER",
+                "NOVEMBER",
+                "DECEMBER"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PremiereResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Лимит 5 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films/filters": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить id стран и жанров для использования в /api/v2.2/films",
+        "description": "Возвращает список id стран и жанров, которые могут быть использованы в /api/v2.2/films",
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FiltersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.2/films": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список фильмов по различным фильтрам",
+        "description": "Возвращает список фильмов с пагинацией. Каждая страница содержит не более чем 20 фильмов. Данный эндпоинт не возращает более 400 фильмов. <i>Используй /api/v2.2/films/filters чтобы получить id стран и жанров.</i>",
+        "parameters": [
+          {
+            "name": "countries",
+            "in": "query",
+            "description": "список id стран разделенные запятой. Например <i>countries=1,2,3</i>. На данный момент можно указать не более одной страны.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "name": "genres",
+            "in": "query",
+            "description": "список id жанров разделенные запятой. Например <i>genres=1,2,3</i>. На данный момент можно указать не более одного жанра.",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            }
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "description": "сортировка",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "RATING",
+              "enum": [
+                "RATING",
+                "NUM_VOTE",
+                "YEAR"
+              ]
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "description": "тип фильма",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string",
+              "default": "ALL",
+              "enum": [
+                "FILM",
+                "TV_SHOW",
+                "TV_SERIES",
+                "MINI_SERIES",
+                "ALL"
+              ]
+            }
+          },
+          {
+            "name": "ratingFrom",
+            "in": "query",
+            "description": "минимальный рейтинг",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "number",
+              "default": 0
+            }
+          },
+          {
+            "name": "ratingTo",
+            "in": "query",
+            "description": "максимальный рейтинг",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "number",
+              "default": 10
+            }
+          },
+          {
+            "name": "yearFrom",
+            "in": "query",
+            "description": "минимальный год",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 1000
+            }
+          },
+          {
+            "name": "yearTo",
+            "in": "query",
+            "description": "максимальный год",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "integer",
+              "default": 3000
+            }
+          },
+          {
+            "name": "imdbId",
+            "in": "query",
+            "description": "imdb id",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "ключевое слово, которое встречается в названии фильма",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilmSearchByFiltersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Лимит 5 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.1/films/{id}/sequels_and_prequels": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить сиквелы и приквелы для фильма по kinopoisk film id",
+        "description": "tbd",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FilmSequelsAndPrequelsResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "404": {
+            "description": "Фильм не найден"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v2.1/films/search-by-keyword": {
+      "get": {
+        "tags": [
+          "films"
+        ],
+        "summary": "получить список фильмов по ключевым словам",
+        "description": "Возвращает список фильмов с пагинацией. Каждая страница содержит не более чем 20 фильмов.",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "description": "ключивые слова для поиска",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 20,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FilmSearchResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "404": {
+            "description": "Фильмы не найдены"
+          },
+          "429": {
+            "description": "Слишком много запросов. Лимит 5 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v1/staff": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "получить данные об актерах, режисерах и т.д. по kinopoisk film id",
+        "parameters": [
+          {
+            "name": "filmId",
+            "in": "query",
+            "description": "kinopoisk film id",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 15000000,
+              "minimum": 1,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/StaffResponse"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "404": {
+            "description": "Данные не найдены"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v1/staff/{id}": {
+      "get": {
+        "tags": [
+          "staff"
+        ],
+        "summary": "получить данные о конкретном человеке по kinopoisk person id",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "kinopoisk person id",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "404": {
+            "description": "Данные не найдены"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v1/persons": {
+      "get": {
+        "tags": [
+          "persons"
+        ],
+        "summary": "поиск актеров, режиссеров и т.д. по имени",
+        "description": "Одна страница может содержать до 50 элементов в items.",
+        "parameters": [
+          {
+            "name": "name",
+            "in": "query",
+            "description": "имя человека",
+            "required": true,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 2,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PersonByNameResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 5 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v1/kp_users/{id}/votes": {
+      "get": {
+        "tags": [
+          "kp_users"
+        ],
+        "summary": "получить данные об оценках пользователя",
+        "description": "Одна страница может содержать до 20 элементов в items. Доступны не все оценки пользователя, а примерно 1500 последних",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "description": "id пользователя на сайте кинопоиск. Может быть строковый",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 300,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KinopoiskUserVoteResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Пустой или неправильный токен"
+          },
+          "402": {
+            "description": "Превышен лимит запросов(или дневной, или общий)"
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 2 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v1/api_keys/{apiKey}": {
+      "get": {
+        "tags": [
+          "api_keys"
+        ],
+        "summary": "получить данные об api key",
+        "parameters": [
+          {
+            "name": "apiKey",
+            "in": "path",
+            "description": "api key",
+            "required": true,
+            "style": "simple",
+            "explode": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiKeyResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 2 запросов в секунду"
+          }
+        }
+      }
+    },
+    "/api/v1/media_posts": {
+      "get": {
+        "tags": [
+          "media_posts"
+        ],
+        "summary": "получить медиа новости с сайта кинопоиск",
+        "description": "Одна страница может содержать до 20 элементов в items.",
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "description": "номер страницы",
+            "required": false,
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "default": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Запрос выполнен успешно",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MediaPostsResponse"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Слишком много запросов. Общий лимит - 25 запросов в секунду"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Film": {
+        "required": [
+          "boxOffice",
+          "countries",
+          "coverUrl",
+          "description",
+          "distributions",
+          "editorAnnotation",
+          "endYear",
+          "facts",
+          "filmLength",
+          "genres",
+          "has3D",
+          "hasImax",
+          "imdbId",
+          "isTicketsAvailable",
+          "kinopoiskHDId",
+          "kinopoiskId",
+          "lastSync",
+          "logoUrl",
+          "nameEn",
+          "nameOriginal",
+          "nameRu",
+          "posterUrl",
+          "posterUrlPreview",
+          "productionStatus",
+          "ratingAgeLimits",
+          "ratingAwait",
+          "ratingAwaitCount",
+          "ratingFilmCritics",
+          "ratingFilmCriticsVoteCount",
+          "ratingGoodReview",
+          "ratingGoodReviewVoteCount",
+          "ratingImdb",
+          "ratingImdbVoteCount",
+          "ratingKinopoisk",
+          "ratingKinopoiskVoteCount",
+          "ratingMpaa",
+          "ratingRfCritics",
+          "ratingRfCriticsVoteCount",
+          "reviewsCount",
+          "seasons",
+          "shortDescription",
+          "slogan",
+          "startYear",
+          "type",
+          "webUrl",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 301
+          },
+          "kinopoiskHDId": {
+            "type": "string",
+            "nullable": true,
+            "example": "4824a95e60a7db7e86f14137516ba590"
+          },
+          "imdbId": {
+            "type": "string",
+            "nullable": true,
+            "example": "tt0133093"
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Матрица"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Matrix"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Matrix"
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp/301.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "coverUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://avatars.mds.yandex.net/get-ott/1672343/2a0000016cc7177239d4025185c488b1bf43/orig"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://avatars.mds.yandex.net/get-ott/1648503/2a00000170a5418408119bc802b53a03007b/orig"
+          },
+          "reviewsCount": {
+            "type": "integer",
+            "example": 293
+          },
+          "ratingGoodReview": {
+            "type": "number",
+            "nullable": true,
+            "example": 88.9
+          },
+          "ratingGoodReviewVoteCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 257
+          },
+          "ratingKinopoisk": {
+            "type": "number",
+            "nullable": true,
+            "example": 8.5
+          },
+          "ratingKinopoiskVoteCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 524108
+          },
+          "ratingImdb": {
+            "type": "number",
+            "nullable": true,
+            "example": 8.7
+          },
+          "ratingImdbVoteCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1729087
+          },
+          "ratingFilmCritics": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.8
+          },
+          "ratingFilmCriticsVoteCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 155
+          },
+          "ratingAwait": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.8
+          },
+          "ratingAwaitCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 2
+          },
+          "ratingRfCritics": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.8
+          },
+          "ratingRfCriticsVoteCount": {
+            "type": "integer",
+            "nullable": true,
+            "example": 31
+          },
+          "webUrl": {
+            "type": "string",
+            "example": "https://www.kinopoisk.ru/film/301/"
+          },
+          "year": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1999
+          },
+          "filmLength": {
+            "type": "integer",
+            "nullable": true,
+            "example": 136
+          },
+          "slogan": {
+            "type": "string",
+            "nullable": true,
+            "example": "Добро пожаловать в реальный мир"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Жизнь Томаса Андерсона разделена на две части:"
+          },
+          "shortDescription": {
+            "type": "string",
+            "nullable": true,
+            "example": "Хакер Нео узнает, что его мир — виртуальный. Выдающийся экшен, доказавший, что зрелищное кино может быть умным"
+          },
+          "editorAnnotation": {
+            "type": "string",
+            "nullable": true,
+            "example": "Фильм доступен только на языке оригинала с русскими субтитрами"
+          },
+          "isTicketsAvailable": {
+            "type": "boolean",
+            "example": false
+          },
+          "productionStatus": {
+            "type": "string",
+            "nullable": true,
+            "example": "POST_PRODUCTION",
+            "enum": [
+              "FILMING",
+              "PRE_PRODUCTION",
+              "COMPLETED",
+              "ANNOUNCED",
+              "UNKNOWN",
+              "POST_PRODUCTION"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "example": "FILM",
+            "enum": [
+              "FILM",
+              "VIDEO",
+              "TV_SERIES",
+              "MINI_SERIES",
+              "TV_SHOW"
+            ]
+          },
+          "ratingMpaa": {
+            "type": "string",
+            "nullable": true,
+            "example": "r"
+          },
+          "ratingAgeLimits": {
+            "type": "string",
+            "nullable": true,
+            "example": "age16"
+          },
+          "hasImax": {
+            "type": "boolean",
+            "nullable": true,
+            "example": false
+          },
+          "has3D": {
+            "type": "boolean",
+            "nullable": true,
+            "example": false
+          },
+          "lastSync": {
+            "type": "string",
+            "example": "2021-07-29T20:07:49.109817"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "startYear": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1996
+          },
+          "endYear": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1996
+          },
+          "serial": {
+            "type": "boolean",
+            "nullable": true,
+            "example": false
+          },
+          "shortFilm": {
+            "type": "boolean",
+            "nullable": true,
+            "example": false
+          },
+          "completed": {
+            "type": "boolean",
+            "nullable": true,
+            "example": false
+          }
+        }
+      },
+      "SeasonResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 5
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Season"
+            }
+          }
+        }
+      },
+      "FactResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 5
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Fact"
+            }
+          }
+        }
+      },
+      "DistributionResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 5
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Distribution"
+            }
+          }
+        }
+      },
+      "BoxOfficeResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 5
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BoxOffice"
+            }
+          }
+        }
+      },
+      "Fact": {
+        "required": [
+          "spoiler",
+          "text",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string",
+            "example": "В эпизоде, где Тринити и Нео в поисках Морфиуса оказываются на крыше..."
+          },
+          "type": {
+            "type": "string",
+            "example": "BLOOPER",
+            "enum": [
+              "FACT",
+              "BLOOPER"
+            ]
+          },
+          "spoiler": {
+            "type": "boolean",
+            "example": false
+          }
+        }
+      },
+      "BoxOffice": {
+        "required": [
+          "amount",
+          "currencyCode",
+          "name",
+          "symbol",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "BUDGET"
+          },
+          "amount": {
+            "type": "integer",
+            "example": 63000000
+          },
+          "currencyCode": {
+            "type": "string",
+            "example": "USD"
+          },
+          "name": {
+            "type": "string",
+            "example": "US Dollar"
+          },
+          "symbol": {
+            "type": "string",
+            "example": "$"
+          }
+        }
+      },
+      "AwardResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 5
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Award"
+            }
+          }
+        }
+      },
+      "Award": {
+        "required": [
+          "imageUrl",
+          "name",
+          "nominationName",
+          "win",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "nullable": false,
+            "example": "Оскар"
+          },
+          "win": {
+            "type": "boolean",
+            "nullable": false,
+            "example": true
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "https://avatars.mds.yandex.net/get-kinopoisk-image/1600647/09035193-2458-4de7-a7df-ad8f85b73798/orig"
+          },
+          "nominationName": {
+            "type": "string",
+            "nullable": false,
+            "example": "Лучший звук"
+          },
+          "year": {
+            "type": "integer",
+            "nullable": false,
+            "example": 2000
+          },
+          "persons": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AwardPerson"
+            }
+          }
+        }
+      },
+      "AwardPerson": {
+        "required": [
+          "age",
+          "birthday",
+          "birthplace",
+          "death",
+          "deathplace",
+          "growth",
+          "kinopoiskId",
+          "nameEn",
+          "nameRu",
+          "posterUrl",
+          "profession",
+          "sex",
+          "webUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "nullable": false,
+            "example": 1937039
+          },
+          "webUrl": {
+            "type": "string",
+            "nullable": false,
+            "example": "https://www.kinopoisk.ru/name/1937039/"
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Джон Т. Рейц"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "John T. Reitz"
+          },
+          "sex": {
+            "type": "string",
+            "nullable": false,
+            "example": "MALE"
+          },
+          "posterUrl": {
+            "type": "string",
+            "nullable": false,
+            "example": "https://kinopoiskapiunofficial.tech/images/actor_posters/kp/1937039.jpg"
+          },
+          "growth": {
+            "type": "integer",
+            "nullable": true,
+            "example": 178
+          },
+          "birthday": {
+            "type": "string",
+            "nullable": true,
+            "example": "1955-11-02"
+          },
+          "death": {
+            "type": "string",
+            "nullable": true,
+            "example": "2019-01-06"
+          },
+          "age": {
+            "type": "integer",
+            "nullable": true,
+            "example": 21
+          },
+          "birthplace": {
+            "type": "string",
+            "nullable": true,
+            "example": "Лос-Анджелес, Калифорния, США"
+          },
+          "deathplace": {
+            "type": "string",
+            "nullable": true,
+            "example": "Лос-Анджелес, Калифорния, США"
+          },
+          "profession": {
+            "type": "string",
+            "nullable": true,
+            "example": "Монтажер, Продюсер"
+          }
+        }
+      },
+      "Distribution": {
+        "required": [
+          "companies",
+          "country",
+          "date",
+          "reRelease",
+          "subType",
+          "type"
+        ],
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "example": "PREMIERE",
+            "enum": [
+              "LOCAL",
+              "COUNTRY_SPECIFIC",
+              "PREMIERE",
+              "ALL",
+              "WORLD_PREMIER"
+            ]
+          },
+          "subType": {
+            "type": "string",
+            "nullable": true,
+            "example": "CINEMA",
+            "enum": [
+              "CINEMA",
+              "DVD",
+              "DIGITAL",
+              "BLURAY"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "nullable": true,
+            "example": "1999-05-07"
+          },
+          "reRelease": {
+            "type": "boolean",
+            "nullable": true,
+            "example": false
+          },
+          "country": {
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/Country"
+              },
+              {
+                "nullable": true
+              }
+            ]
+          },
+          "companies": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Company"
+            }
+          }
+        }
+      },
+      "Company": {
+        "required": [
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "Каро-Премьер"
+          }
+        }
+      },
+      "Season": {
+        "required": [
+          "episodes",
+          "number"
+        ],
+        "type": "object",
+        "properties": {
+          "number": {
+            "type": "integer",
+            "example": 1
+          },
+          "episodes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Episode"
+            }
+          }
+        }
+      },
+      "Episode": {
+        "required": [
+          "episodeNumber",
+          "nameEn",
+          "nameRu",
+          "releaseDate",
+          "seasonNumber",
+          "synopsis"
+        ],
+        "type": "object",
+        "properties": {
+          "seasonNumber": {
+            "type": "integer",
+            "example": 1
+          },
+          "episodeNumber": {
+            "type": "integer",
+            "example": 1
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "Chapter One: The Vanishing of Will Byers"
+          },
+          "synopsis": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Vanishing of Will Byers..."
+          },
+          "releaseDate": {
+            "type": "string",
+            "nullable": true,
+            "example": "2016-07-15"
+          }
+        }
+      },
+      "Country": {
+        "required": [
+          "country"
+        ],
+        "type": "object",
+        "properties": {
+          "country": {
+            "type": "string",
+            "example": "США"
+          }
+        }
+      },
+      "Genre": {
+        "required": [
+          "genre"
+        ],
+        "type": "object",
+        "properties": {
+          "genre": {
+            "type": "string",
+            "example": "фантастика"
+          }
+        }
+      },
+      "FiltersResponse": {
+        "required": [
+          "countries",
+          "genres"
+        ],
+        "type": "object",
+        "properties": {
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FiltersResponse_genres"
+            }
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FiltersResponse_countries"
+            }
+          }
+        }
+      },
+      "FilmSearchResponse": {
+        "required": [
+          "films",
+          "keyword",
+          "pagesCount",
+          "searchFilmsCountResult"
+        ],
+        "type": "object",
+        "properties": {
+          "keyword": {
+            "type": "string",
+            "example": "мстители"
+          },
+          "pagesCount": {
+            "type": "integer",
+            "example": 7
+          },
+          "searchFilmsCountResult": {
+            "type": "integer",
+            "example": 134
+          },
+          "films": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilmSearchResponse_films"
+            }
+          }
+        }
+      },
+      "FilmSearchByFiltersResponse": {
+        "required": [
+          "items",
+          "total",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 7
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 1
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilmSearchByFiltersResponse_items"
+            }
+          }
+        }
+      },
+      "FilmSequelsAndPrequelsResponse": {
+        "required": [
+          "filmId",
+          "nameEn",
+          "nameOriginal",
+          "nameRu",
+          "posterUrl",
+          "posterUrlPreview",
+          "relationType"
+        ],
+        "type": "object",
+        "properties": {
+          "filmId": {
+            "type": "integer",
+            "example": 301
+          },
+          "nameRu": {
+            "type": "string",
+            "example": "Матрица"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "The Matrix"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "example": "The Matrix"
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp/301.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "relationType": {
+            "type": "string",
+            "example": "SEQUEL",
+            "enum": [
+              "SEQUEL",
+              "PREQUEL",
+              "REMAKE",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "SimilarFilmResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 7
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SimilarFilmResponse_items"
+            }
+          }
+        }
+      },
+      "RelatedFilmResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 7
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/RelatedFilmResponse_items"
+            }
+          }
+        }
+      },
+      "ReviewResponse": {
+        "required": [
+          "items",
+          "total",
+          "totalNegativeReviews",
+          "totalNeutralReviews",
+          "totalPages",
+          "totalPositiveReviews"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Суммарное кол-во пользовательских рецензий",
+            "nullable": false,
+            "example": 12
+          },
+          "totalPages": {
+            "type": "integer",
+            "nullable": false,
+            "example": 2
+          },
+          "totalPositiveReviews": {
+            "type": "integer",
+            "nullable": false,
+            "example": 1
+          },
+          "totalNegativeReviews": {
+            "type": "integer",
+            "nullable": false,
+            "example": 7
+          },
+          "totalNeutralReviews": {
+            "type": "integer",
+            "nullable": false,
+            "example": 12
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReviewResponse_items"
+            }
+          }
+        }
+      },
+      "ExternalSourceResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Суммарное кол-во сайтов",
+            "nullable": false,
+            "example": 12
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ExternalSourceResponse_items"
+            }
+          }
+        }
+      },
+      "FilmCollectionResponse": {
+        "required": [
+          "items",
+          "total",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 200
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 7
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FilmCollectionResponse_items"
+            }
+          }
+        }
+      },
+      "StaffResponse": {
+        "required": [
+          "description",
+          "nameEn",
+          "nameRu",
+          "posterUrl",
+          "professionKey",
+          "professionText",
+          "staffId"
+        ],
+        "type": "object",
+        "properties": {
+          "staffId": {
+            "type": "integer",
+            "example": 66539
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Винс Гиллиган"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vince Gilligan"
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Neo"
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://st.kp.yandex.net/images/actor/66539.jpg"
+          },
+          "professionText": {
+            "type": "string",
+            "example": "Режиссеры"
+          },
+          "professionKey": {
+            "type": "string",
+            "example": "DIRECTOR",
+            "enum": [
+              "WRITER",
+              "OPERATOR",
+              "EDITOR",
+              "COMPOSER",
+              "PRODUCER_USSR",
+              "HIMSELF",
+              "HERSELF",
+              "HRONO_TITR_MALE",
+              "HRONO_TITR_FEMALE",
+              "VOICE_MALE",
+              "VOICE_FEMALE",
+              "TRANSLATOR",
+              "DIRECTOR",
+              "DESIGN",
+              "PRODUCER",
+              "ACTOR",
+              "VOICE_DIRECTOR",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "PersonResponse": {
+        "required": [
+          "age",
+          "birthday",
+          "birthplace",
+          "death",
+          "deathplace",
+          "facts",
+          "films",
+          "growth",
+          "hasAwards",
+          "nameEn",
+          "nameRu",
+          "personId",
+          "posterUrl",
+          "profession",
+          "sex",
+          "spouses",
+          "webUrl"
+        ],
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "integer",
+            "example": 66539
+          },
+          "webUrl": {
+            "type": "string",
+            "nullable": true,
+            "example": "10096"
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Винс Гиллиган"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vince Gilligan"
+          },
+          "sex": {
+            "type": "string",
+            "nullable": true,
+            "example": "MALE",
+            "enum": [
+              "MALE",
+              "FEMALE"
+            ]
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/actor_posters/kp/10096.jpg"
+          },
+          "growth": {
+            "type": "string",
+            "nullable": true,
+            "example": "174"
+          },
+          "birthday": {
+            "type": "string",
+            "nullable": true,
+            "example": "1965-04-04"
+          },
+          "death": {
+            "type": "string",
+            "nullable": true,
+            "example": "2008-01-22"
+          },
+          "age": {
+            "type": "integer",
+            "nullable": true,
+            "example": 55
+          },
+          "birthplace": {
+            "type": "string",
+            "nullable": true,
+            "example": "Манхэттэн, Нью-Йорк, США"
+          },
+          "deathplace": {
+            "type": "string",
+            "nullable": true,
+            "example": "Манхэттэн, Нью-Йорк, США"
+          },
+          "hasAwards": {
+            "type": "integer",
+            "nullable": true,
+            "example": 1
+          },
+          "profession": {
+            "type": "string",
+            "nullable": true,
+            "example": "Актер, Продюсер, Сценарист"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "example": "Полное имя - Роберт Джон Дауни младший (Robert John Downey Jr.)."
+            }
+          },
+          "spouses": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonResponse_spouses"
+            }
+          },
+          "films": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonResponse_films"
+            }
+          }
+        }
+      },
+      "PersonByNameResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 35
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PersonByNameResponse_items"
+            }
+          }
+        }
+      },
+      "ImageResponse": {
+        "required": [
+          "items",
+          "total",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "description": "Общее кол-во изображений",
+            "example": 50
+          },
+          "totalPages": {
+            "type": "integer",
+            "description": "Код-во доступных страниц",
+            "example": 3
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImageResponse_items"
+            }
+          }
+        }
+      },
+      "PremiereResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 34
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PremiereResponseItem"
+            }
+          }
+        }
+      },
+      "PremiereResponseItem": {
+        "required": [
+          "countries",
+          "duration",
+          "genres",
+          "kinopoiskId",
+          "nameEn",
+          "nameRu",
+          "posterUrl",
+          "posterUrlPreview",
+          "premiereRu",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 301
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Дитя погоды"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "Tenki no ko"
+          },
+          "year": {
+            "type": "integer",
+            "example": 2019
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "http://kinopoiskapiunofficial.tech/images/posters/kp/1219417.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "duration": {
+            "type": "integer",
+            "nullable": true,
+            "example": 112
+          },
+          "premiereRu": {
+            "type": "string",
+            "example": "2020-06-01"
+          }
+        }
+      },
+      "DigitalReleaseResponse": {
+        "required": [
+          "page",
+          "releases",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer",
+            "example": 1
+          },
+          "total": {
+            "type": "integer",
+            "example": 34
+          },
+          "releases": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DigitalReleaseItem"
+            }
+          }
+        }
+      },
+      "DigitalReleaseItem": {
+        "required": [
+          "countries",
+          "duration",
+          "expectationsRating",
+          "expectationsRatingVoteCount",
+          "filmId",
+          "genres",
+          "nameEn",
+          "nameRu",
+          "posterUrl",
+          "posterUrlPreview",
+          "rating",
+          "ratingVoteCount",
+          "releaseDate",
+          "year"
+        ],
+        "type": "object",
+        "properties": {
+          "filmId": {
+            "type": "integer",
+            "example": 301
+          },
+          "nameRu": {
+            "type": "string",
+            "example": "Дитя погоды"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "Tenki no ko"
+          },
+          "year": {
+            "type": "integer",
+            "example": 2019
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "http://kinopoiskapiunofficial.tech/images/posters/kp/1219417.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "rating": {
+            "type": "number",
+            "example": 7.962
+          },
+          "ratingVoteCount": {
+            "type": "integer",
+            "example": 14502
+          },
+          "expectationsRating": {
+            "type": "number",
+            "example": 99.13
+          },
+          "expectationsRatingVoteCount": {
+            "type": "integer",
+            "example": 1123
+          },
+          "duration": {
+            "type": "integer",
+            "example": 112
+          },
+          "releaseDate": {
+            "type": "string",
+            "example": "2020-06-01"
+          }
+        }
+      },
+      "VideoResponse": {
+        "required": [
+          "items",
+          "total"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 50
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/VideoResponse_items"
+            }
+          }
+        }
+      },
+      "KinopoiskUserVoteResponse": {
+        "required": [
+          "items",
+          "total",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 200
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 7
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/KinopoiskUserVoteResponse_items"
+            }
+          }
+        }
+      },
+      "ApiKeyResponse": {
+        "required": [
+          "accountType",
+          "dailyQuota",
+          "totalQuota"
+        ],
+        "type": "object",
+        "properties": {
+          "totalQuota": {
+            "$ref": "#/components/schemas/ApiKeyResponse_totalQuota"
+          },
+          "dailyQuota": {
+            "$ref": "#/components/schemas/ApiKeyResponse_dailyQuota"
+          },
+          "accountType": {
+            "type": "string",
+            "example": "FREE",
+            "enum": [
+              "FREE",
+              "EXTENDED",
+              "UNLIMITED"
+            ]
+          }
+        }
+      },
+      "MediaPostsResponse": {
+        "required": [
+          "items",
+          "total",
+          "totalPages"
+        ],
+        "type": "object",
+        "properties": {
+          "total": {
+            "type": "integer",
+            "example": 200
+          },
+          "totalPages": {
+            "type": "integer",
+            "example": 7
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MediaPostsResponse_items"
+            }
+          }
+        }
+      },
+      "ApiError": {
+        "required": [
+          "message"
+        ],
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "nullable": false,
+            "example": "User test@test.ru is inactive or deleted."
+          }
+        }
+      },
+      "FiltersResponse_genres": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "genre": {
+            "type": "string",
+            "example": "боевик"
+          }
+        }
+      },
+      "FiltersResponse_countries": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "example": 1
+          },
+          "country": {
+            "type": "string",
+            "example": "США"
+          }
+        }
+      },
+      "FilmSearchResponse_films": {
+        "type": "object",
+        "properties": {
+          "filmId": {
+            "type": "integer",
+            "example": 263531
+          },
+          "nameRu": {
+            "type": "string",
+            "example": "Мстители"
+          },
+          "nameEn": {
+            "type": "string",
+            "example": "The Avengers"
+          },
+          "type": {
+            "type": "string",
+            "example": "FILM",
+            "enum": [
+              "FILM",
+              "TV_SHOW",
+              "VIDEO",
+              "MINI_SERIES",
+              "TV_SERIES",
+              "UNKNOWN"
+            ]
+          },
+          "year": {
+            "type": "string",
+            "example": "2012"
+          },
+          "description": {
+            "type": "string",
+            "example": "США, Джосс Уидон(фантастика)"
+          },
+          "filmLength": {
+            "type": "string",
+            "example": "2:17"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "rating": {
+            "type": "string",
+            "example": "NOTE!!! 7.9 for released film or 99% if film have not released yet"
+          },
+          "ratingVoteCount": {
+            "type": "integer",
+            "example": 284245
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "http://kinopoiskapiunofficial.tech/images/posters/kp/263531.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          }
+        }
+      },
+      "FilmSearchByFiltersResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 263531
+          },
+          "imdbId": {
+            "type": "string",
+            "nullable": true,
+            "example": "tt0050561"
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Мстители"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Avengers"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Avengers"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "ratingKinopoisk": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.9
+          },
+          "ratingImdb": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.9
+          },
+          "year": {
+            "type": "number",
+            "nullable": true,
+            "example": 2012
+          },
+          "type": {
+            "type": "string",
+            "example": "FILM",
+            "enum": [
+              "FILM",
+              "TV_SHOW",
+              "VIDEO",
+              "MINI_SERIES",
+              "TV_SERIES",
+              "UNKNOWN"
+            ]
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "http://kinopoiskapiunofficial.tech/images/posters/kp/263531.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          }
+        }
+      },
+      "SimilarFilmResponse_items": {
+        "type": "object",
+        "properties": {
+          "filmId": {
+            "type": "integer",
+            "example": 301
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Матрица"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Matrix"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Matrix"
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp/301.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "relationType": {
+            "type": "string",
+            "example": "SIMILAR",
+            "enum": [
+              "SIMILAR"
+            ]
+          }
+        }
+      },
+      "RelatedFilmResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 301
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Матрица"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Matrix"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Matrix"
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp/301.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "relationType": {
+            "type": "string",
+            "example": "SIMILAR",
+            "enum": [
+              "SEQUEL",
+              "PREQUEL",
+              "REMAKE",
+              "SIMILAR",
+              "VERSION",
+              "SPOOFS",
+              "SPOOFED",
+              "SPIN_OFF",
+              "SPUN_OFF_FROM",
+              "REFERENCES",
+              "REFERENCES_IN",
+              "EDITED_FROM",
+              "EDITED_INTO",
+              "ALTERNATE_LANGUAGE"
+            ]
+          }
+        }
+      },
+      "ReviewResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "nullable": false,
+            "example": 2
+          },
+          "type": {
+            "type": "string",
+            "nullable": false,
+            "enum": [
+              "POSITIVE",
+              "NEGATIVE",
+              "NEUTRAL",
+              "UNKNOWN"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "nullable": false,
+            "example": "2010-09-05T20:37:00"
+          },
+          "positiveRating": {
+            "type": "integer",
+            "nullable": false,
+            "example": 122
+          },
+          "negativeRating": {
+            "type": "integer",
+            "nullable": false,
+            "example": 12
+          },
+          "author": {
+            "type": "string",
+            "nullable": false,
+            "example": "Username"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Title"
+          },
+          "description": {
+            "type": "string",
+            "nullable": false,
+            "example": "text"
+          }
+        }
+      },
+      "ExternalSourceResponse_items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "nullable": false,
+            "example": "https://okko.tv/movie/equilibrium?utm_medium=referral&utm_source=yandex_search&utm_campaign=new_search_feed"
+          },
+          "platform": {
+            "type": "string",
+            "nullable": false,
+            "example": "Okko"
+          },
+          "logoUrl": {
+            "type": "string",
+            "nullable": false,
+            "example": "https://avatars.mds.yandex.net/get-ott/239697/7713e586-17d1-42d1-ac62-53e9ef1e70c3/orig"
+          },
+          "positiveRating": {
+            "type": "integer",
+            "nullable": false,
+            "example": 122
+          },
+          "negativeRating": {
+            "type": "integer",
+            "nullable": false,
+            "example": 12
+          },
+          "author": {
+            "type": "string",
+            "nullable": false,
+            "example": "Username"
+          },
+          "title": {
+            "type": "string",
+            "nullable": true,
+            "example": "Title"
+          },
+          "description": {
+            "type": "string",
+            "nullable": false,
+            "example": "text"
+          }
+        }
+      },
+      "FilmCollectionResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 263531
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Мстители"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Avengers"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Avengers"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "ratingKinopoisk": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.9
+          },
+          "ratingImbd": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.9
+          },
+          "year": {
+            "type": "string",
+            "nullable": true,
+            "example": "2012"
+          },
+          "type": {
+            "type": "string",
+            "example": "FILM",
+            "enum": [
+              "FILM",
+              "TV_SHOW",
+              "VIDEO",
+              "MINI_SERIES",
+              "TV_SERIES",
+              "UNKNOWN"
+            ]
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "http://kinopoiskapiunofficial.tech/images/posters/kp/263531.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          }
+        }
+      },
+      "PersonResponse_spouses": {
+        "type": "object",
+        "properties": {
+          "personId": {
+            "type": "integer",
+            "example": 32169
+          },
+          "name": {
+            "type": "string",
+            "nullable": true,
+            "example": "Сьюзан Дауни"
+          },
+          "divorced": {
+            "type": "boolean",
+            "example": false
+          },
+          "divorcedReason": {
+            "type": "string",
+            "nullable": true,
+            "example": ""
+          },
+          "sex": {
+            "type": "string",
+            "example": "MALE",
+            "enum": [
+              "MALE",
+              "FEMALE"
+            ]
+          },
+          "children": {
+            "type": "integer",
+            "example": 2
+          },
+          "webUrl": {
+            "type": "string",
+            "example": "https://www.kinopoisk.ru/name/32169/"
+          },
+          "relation": {
+            "type": "string",
+            "example": "супруга"
+          }
+        }
+      },
+      "PersonResponse_films": {
+        "type": "object",
+        "properties": {
+          "filmId": {
+            "type": "integer",
+            "example": 32169
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Солист"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Soloist"
+          },
+          "rating": {
+            "type": "string",
+            "nullable": true,
+            "example": "7.2 or 76% if film has not released yet"
+          },
+          "year": {
+            "type": "string",
+            "nullable": true,
+            "example": "2009"
+          },
+          "general": {
+            "type": "boolean",
+            "example": false
+          },
+          "description": {
+            "type": "string",
+            "nullable": true,
+            "example": "Steve Lopez"
+          },
+          "professionKey": {
+            "type": "string",
+            "example": "ACTOR",
+            "enum": [
+              "WRITER",
+              "OPERATOR",
+              "EDITOR",
+              "COMPOSER",
+              "PRODUCER_USSR",
+              "HIMSELF",
+              "HERSELF",
+              "HRONO_TITR_MALE",
+              "HRONO_TITR_FEMALE",
+              "VOICE_MALE",
+              "VOICE_FEMALE",
+              "TRANSLATOR",
+              "DIRECTOR",
+              "DESIGN",
+              "PRODUCER",
+              "ACTOR",
+              "VOICE_DIRECTOR",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "PersonByNameResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 66539
+          },
+          "webUrl": {
+            "type": "string",
+            "example": "10096"
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Винс Гиллиган"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "Vince Gilligan"
+          },
+          "sex": {
+            "type": "string",
+            "nullable": true,
+            "example": "MALE",
+            "enum": [
+              "MALE",
+              "FEMALE",
+              "UNKNOWN"
+            ]
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/actor_posters/kp/10096.jpg"
+          }
+        }
+      },
+      "ImageResponse_items": {
+        "type": "object",
+        "properties": {
+          "imageUrl": {
+            "type": "string",
+            "example": "https://avatars.mds.yandex.net/get-kinopoisk-image/4303601/2924f6c4-4ea0-4a1d-9a48-f29577172b27/orig"
+          },
+          "previewUrl": {
+            "type": "string",
+            "example": "https://avatars.mds.yandex.net/get-kinopoisk-image/4303601/2924f6c4-4ea0-4a1d-9a48-f29577172b27/300x"
+          }
+        }
+      },
+      "VideoResponse_items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string",
+            "example": "https://www.youtube.com/watch?v=gbcVZgO4n4E"
+          },
+          "name": {
+            "type": "string",
+            "example": "Мстители: Финал – официальный трейлер (16+)"
+          },
+          "site": {
+            "type": "string",
+            "example": "YOUTUBE",
+            "enum": [
+              "YOUTUBE",
+              "KINOPOISK_WIDGET",
+              "YANDEX_DISK",
+              "UNKNOWN"
+            ]
+          }
+        }
+      },
+      "KinopoiskUserVoteResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 263531
+          },
+          "nameRu": {
+            "type": "string",
+            "nullable": true,
+            "example": "Мстители"
+          },
+          "nameEn": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Avengers"
+          },
+          "nameOriginal": {
+            "type": "string",
+            "nullable": true,
+            "example": "The Avengers"
+          },
+          "countries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Country"
+            }
+          },
+          "genres": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/Genre"
+            }
+          },
+          "ratingKinopoisk": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.9
+          },
+          "ratingImbd": {
+            "type": "number",
+            "nullable": true,
+            "example": 7.9
+          },
+          "year": {
+            "type": "string",
+            "nullable": true,
+            "example": "2012"
+          },
+          "type": {
+            "type": "string",
+            "example": "FILM",
+            "enum": [
+              "FILM",
+              "TV_SHOW",
+              "VIDEO",
+              "MINI_SERIES",
+              "TV_SERIES",
+              "UNKNOWN"
+            ]
+          },
+          "posterUrl": {
+            "type": "string",
+            "example": "http://kinopoiskapiunofficial.tech/images/posters/kp/263531.jpg"
+          },
+          "posterUrlPreview": {
+            "type": "string",
+            "example": "https://kinopoiskapiunofficial.tech/images/posters/kp_small/301.jpg"
+          },
+          "userRating": {
+            "type": "integer",
+            "nullable": false,
+            "example": 7
+          }
+        }
+      },
+      "ApiKeyResponse_totalQuota": {
+        "required": [
+          "used",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "example": 1000
+          },
+          "used": {
+            "type": "integer",
+            "example": 2
+          }
+        }
+      },
+      "ApiKeyResponse_dailyQuota": {
+        "required": [
+          "used",
+          "value"
+        ],
+        "type": "object",
+        "properties": {
+          "value": {
+            "type": "integer",
+            "example": 500
+          },
+          "used": {
+            "type": "integer",
+            "example": 2
+          }
+        }
+      },
+      "MediaPostsResponse_items": {
+        "type": "object",
+        "properties": {
+          "kinopoiskId": {
+            "type": "integer",
+            "example": 4008943
+          },
+          "imageUrl": {
+            "type": "string",
+            "nullable": false,
+            "example": "https://avatars.mds.yandex.net/get-kinopoisk-post-thumb/1348084/a879121a01ae7416afac04e2061521d5/orig"
+          },
+          "title": {
+            "type": "string",
+            "nullable": false,
+            "example": "«Общество снега»: кино о голодающих в Андах регбистах, которое претендует на «Оскар»"
+          },
+          "description": {
+            "type": "string",
+            "nullable": false,
+            "example": "«Общество снега» на Netflix — драма выживания, претендующая на «Оскар». Это история уругвайских регбистов, попавших в авиакатастрофу и оказавшихся в заснеженных горах. Рассказываем, чем же они там питались."
+          },
+          "url": {
+            "type": "string",
+            "nullable": false,
+            "example": "https://www.kinopoisk.ru/api/webview/post/4008943"
+          },
+          "publishedAt": {
+            "type": "string",
+            "nullable": false,
+            "example": "2024-01-09T12:35:22"
+          }
+        }
+      }
+    },
+    "securitySchemes": {
+      "ApiKeyAuth": {
+        "type": "apiKey",
+        "description": "API key to authorize requests.",
+        "name": "X-API-KEY",
+        "in": "header"
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+services:
+  bot:
+    image: ghcr.io/brawler2011/movie-treasure-trove:latest
+    container_name: movie-treasure-trove
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    environment:
+      - DATABASE_PATH=/app/data/bot_database.db
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"

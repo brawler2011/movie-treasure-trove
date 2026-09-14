@@ -1,88 +1,154 @@
+import asyncio
+import logging
+import sys
+from telegram import Update
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
+    CommandHandler,
     InlineQueryHandler,
-    CommandHandler
+    MessageHandler,
+    filters,
+    ContextTypes,
 )
-from bot_features.search import search
-from bot_features.start import start
-from bot_features.menu import send_menu
-from bot_features.film import send_film, send_random_film
-from bot_features.work_with_lists import (
-    add_to_liked,
-    add_to_disliked,
-    add_to_favourite,
-    add_to_watch_list,
-    send_lists_menu
+
+from config import BOT_TOKEN
+from database import init_db
+from recommendation.engine import get_recommendation_engine
+from bot_features.onboarding import (
+    start_command,
+    start_blitz,
+    handle_blitz_callback,
 )
-from bot_features.filter import send_filter_menu, send_current_filters
-from bot_features.type import change_type
-from bot_features.genres import add_genre, remove_genre
-from bot_features.countries import add_country, remove_country
-from bot_features.rating import set_rating_from, set_rating_to
-from bot_features.year import set_year_from, set_year_to
-from bot_features.reset import reset
-from bot_features.help import send_help
-from bot_features.recommendation import recommend
-import logging
-from database.models import db_session
-from constants import BOT_TOKEN
+from bot_features.feed import (
+    recommend_command,
+    send_next_recommendation,
+    handle_feed_reaction,
+)
+from bot_features.search import (
+    search_command,
+    handle_search_query,
+    handle_search_reaction,
+    inline_search,
+)
+from bot_features.lists import (
+    lists_command,
+    handle_list_view,
+    handle_list_navigation,
+    handle_list_delete,
+    handle_list_like,
+)
+from bot_features.filter import (
+    filter_command,
+    handle_set_genre,
+    handle_reset_genre,
+    handle_set_type,
+    handle_reset_type,
+)
+from bot_features.help import help_command
 
 logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.DEBUG
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    level=logging.INFO,
 )
+logger = logging.getLogger("movie_bot")
 
-logger = logging.getLogger(__name__)
+
+async def handle_text_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    """Диспетчер текстовых сообщений (кнопки меню или поиск фильмов)"""
+    if not update.message or not update.message.text:
+        return
+
+    text = update.message.text.strip()
+
+    if text == "🎬 Рекомендовать":
+        await recommend_command(update, context)
+    elif text == "🔍 Поиск":
+        await search_command(update, context)
+    elif text == "🗂️ Мои списки":
+        await lists_command(update, context)
+    elif text == "⚙️ Фильтры":
+        await filter_command(update, context)
+    elif text == "⚡ Пройти блиц-тест вкусов":
+        await start_blitz(update, context)
+    else:
+        # Считаем сообщение поисковым запросом названия фильма
+        await handle_search_query(update, context)
+
+
+async def post_init(application: Application) -> None:
+    """Инициализация базы данных и кэша рекомендательного движка при старте"""
+    logger.info("Инициализация базы данных...")
+    await init_db()
+    logger.info("Загрузка векторного кэша рекомендательного движка...")
+    engine = get_recommendation_engine()
+    await engine.ensure_initialized()
+    logger.info("Бот полностью готов к обработке запросов!")
 
 
 def main() -> None:
-    db_session.global_init()
+    if not BOT_TOKEN:
+        print("\n" + "=" * 60)
+        print(" ОШИБКА: BOT_TOKEN не задан в .env или переменных окружения!")
+        print(" Пожалуйста, укажите токен Telegram-бота от @BotFather в файле .env:")
+        print(" BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz")
+        print("=" * 60 + "\n")
+        sys.exit(1)
 
     application = (
         Application.builder()
         .token(BOT_TOKEN)
         .concurrent_updates(True)
-        .arbitrary_callback_data(True)
+        .post_init(post_init)
         .build()
     )
 
-    application.add_handler(InlineQueryHandler(search))
+    # 1. Команды пользователя
+    application.add_handler(CommandHandler("start", start_command))
+    application.add_handler(CommandHandler("recommend", recommend_command))
+    application.add_handler(CommandHandler("search", search_command))
+    application.add_handler(CommandHandler("lists", lists_command))
+    application.add_handler(CommandHandler("filter", filter_command))
+    application.add_handler(CommandHandler("help", help_command))
 
-    # Команды пользователя
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("menu", send_menu))
-    application.add_handler(CommandHandler("help", send_help))
-    application.add_handler(CommandHandler("filter", send_filter_menu))
-    application.add_handler(CommandHandler("random", send_random_film))
-    application.add_handler(CommandHandler("lists", send_lists_menu))
-    application.add_handler(CommandHandler("recommend", recommend))
+    # 2. Инлайн-поиск в любых чатах
+    application.add_handler(InlineQueryHandler(inline_search))
 
-    # Внутренние команды
-    application.add_handler(CommandHandler("id", send_film))
-    application.add_handler(CommandHandler("type", change_type))
-    application.add_handler(CommandHandler("add_genre", add_genre))
-    application.add_handler(CommandHandler("remove_genre", remove_genre))
-    application.add_handler(CommandHandler("add_country", add_country))
-    application.add_handler(CommandHandler("remove_country", remove_country))
-    application.add_handler(CommandHandler("set_rating_from", set_rating_from))
-    application.add_handler(CommandHandler("set_rating_to", set_rating_to))
-    application.add_handler(CommandHandler("set_year_from", set_year_from))
-    application.add_handler(CommandHandler("set_year_to", set_year_to))
+    # 3. Инлайн-кнопки (Callback Queries)
+    # Блиц-онбординг
+    application.add_handler(CallbackQueryHandler(handle_blitz_callback, pattern=r"^blitz_"))
 
-    application.add_handler(CallbackQueryHandler(send_random_film, "random"))
-    application.add_handler(CallbackQueryHandler(send_menu, "menu"))
-    application.add_handler(CallbackQueryHandler(recommend, "recommend"))
-    application.add_handler(CallbackQueryHandler(send_filter_menu, "filter"))
-    application.add_handler(CallbackQueryHandler(add_to_liked, "liked"))
-    application.add_handler(CallbackQueryHandler(add_to_disliked, "disliked"))
-    application.add_handler(CallbackQueryHandler(add_to_favourite, "favourite"))
-    application.add_handler(CallbackQueryHandler(add_to_watch_list, "wanna_watch"))
-    application.add_handler(CallbackQueryHandler(reset, "reset"))
-    application.add_handler(CallbackQueryHandler(send_current_filters, "current_filters"))
-    application.add_handler(CallbackQueryHandler(send_lists_menu, "lists"))
+    # Лента рекомендаций
+    application.add_handler(CallbackQueryHandler(handle_feed_reaction, pattern=r"^feed_(like|dislike|watch|skip)_"))
+    application.add_handler(CallbackQueryHandler(send_next_recommendation, pattern=r"^feed_start$"))
 
-    application.run_polling()
+    # Поиск
+    application.add_handler(CallbackQueryHandler(handle_search_reaction, pattern=r"^search_(like|watch)_"))
+
+    # Списки
+    application.add_handler(CallbackQueryHandler(handle_list_view, pattern=r"^list_view_"))
+    application.add_handler(CallbackQueryHandler(handle_list_navigation, pattern=r"^list_nav_"))
+    application.add_handler(CallbackQueryHandler(handle_list_delete, pattern=r"^list_del_"))
+    application.add_handler(CallbackQueryHandler(handle_list_like, pattern=r"^list_like_"))
+    application.add_handler(CallbackQueryHandler(lists_command, pattern=r"^menu_lists$"))
+
+    # Фильтры
+    application.add_handler(CallbackQueryHandler(handle_set_genre, pattern=r"^set_genre_"))
+    application.add_handler(CallbackQueryHandler(handle_reset_genre, pattern=r"^reset_genre$"))
+    application.add_handler(CallbackQueryHandler(handle_set_type, pattern=r"^set_type_"))
+    application.add_handler(CallbackQueryHandler(handle_reset_type, pattern=r"^reset_type$"))
+    application.add_handler(CallbackQueryHandler(filter_command, pattern=r"^menu_filter_genre$"))
+
+    # 4. Текстовые сообщения
+    application.add_handler(
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message)
+    )
+
+    logger.info("Запуск Telegram-бота (polling)...")
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
