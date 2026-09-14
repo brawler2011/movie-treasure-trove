@@ -22,20 +22,20 @@ export const App: React.FC = () => {
     minYear: 0,
   });
 
-  // Инициализация Telegram WebApp
-  useEffect(() => {
-    initTelegramApp();
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     try {
       const p = await fetchProfile();
       setProfile(p);
     } catch (e) {
       console.warn("Could not load profile:", e);
     }
-  };
+  }, []);
+
+  // Инициализация Telegram WebApp
+  useEffect(() => {
+    initTelegramApp();
+    loadProfile();
+  }, [loadProfile]);
 
   // Загрузка рекомендаций
   const loadRecommendations = useCallback(async (currentFilters: FilterSettings, resetQueue = false) => {
@@ -53,12 +53,18 @@ export const App: React.FC = () => {
   // Первоначальная загрузка
   useEffect(() => {
     loadRecommendations(filters, true);
-  }, []);
+  }, [filters, loadRecommendations]);
 
   // Обработка свайпа
-  const handleSwipe = async (movie: Movie, direction: SwipeDirection) => {
+  const handleSwipe = useCallback(async (movie: Movie, direction: SwipeDirection) => {
     // 1. Мгновенно убираем из очереди на фронтенде для 60fps UX
-    setMovies((prev) => prev.filter((m) => m.id !== movie.id));
+    setMovies((prev) => {
+      const nextList = prev.filter((m) => m.id !== movie.id);
+      if (nextList.length <= 4) {
+        loadRecommendations(filters, false);
+      }
+      return nextList;
+    });
 
     // 2. Добавляем в стек отмены
     setHistory((prev) => [...prev, { movie, action: direction }]);
@@ -74,32 +80,25 @@ export const App: React.FC = () => {
     try {
       await sendSwipe(movie.id, apiAction);
       // Обновляем счетчик
-      if (profile) {
-        setProfile((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            stats: {
-              ...prev.stats,
-              likes: prev.stats.likes + (direction === 'right' ? 1 : 0),
-              dislikes: prev.stats.dislikes + (direction === 'left' ? 1 : 0),
-              watchlist: prev.stats.watchlist + (direction === 'up' ? 1 : 0),
-            },
-          };
-        });
-      }
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            likes: prev.stats.likes + (direction === 'right' ? 1 : 0),
+            dislikes: prev.stats.dislikes + (direction === 'left' ? 1 : 0),
+            watchlist: prev.stats.watchlist + (direction === 'up' ? 1 : 0),
+          },
+        };
+      });
     } catch (err) {
       console.error("Swipe API error:", err);
     }
-
-    // 4. Если в очереди осталось мало фильмов, автоматически догружаем пачку
-    if (movies.length <= 4) {
-      loadRecommendations(filters, false);
-    }
-  };
+  }, [filters, loadRecommendations]);
 
   // Обработка отмены (Undo)
-  const handleUndo = async () => {
+  const handleUndo = useCallback(async () => {
     if (history.length === 0) return;
     const lastItem = history[history.length - 1];
     setHistory((prev) => prev.slice(0, -1));
@@ -109,24 +108,22 @@ export const App: React.FC = () => {
       // Возвращаем фильм на вершину стека
       setMovies((prev) => [lastItem.movie, ...prev]);
 
-      if (profile) {
-        setProfile((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            stats: {
-              ...prev.stats,
-              likes: Math.max(0, prev.stats.likes - (lastItem.action === 'right' ? 1 : 0)),
-              dislikes: Math.max(0, prev.stats.dislikes - (lastItem.action === 'left' ? 1 : 0)),
-              watchlist: Math.max(0, prev.stats.watchlist - (lastItem.action === 'up' ? 1 : 0)),
-            },
-          };
-        });
-      }
+      setProfile((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            likes: Math.max(0, prev.stats.likes - (lastItem.action === 'right' ? 1 : 0)),
+            dislikes: Math.max(0, prev.stats.dislikes - (lastItem.action === 'left' ? 1 : 0)),
+            watchlist: Math.max(0, prev.stats.watchlist - (lastItem.action === 'up' ? 1 : 0)),
+          },
+        };
+      });
     } catch (err) {
       console.error("Undo error:", err);
     }
-  };
+  }, [history]);
 
   const handleApplyFilters = (newFilters: FilterSettings) => {
     setFilters(newFilters);

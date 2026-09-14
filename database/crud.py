@@ -231,3 +231,11 @@ async def get_last_user_interaction(
     )
     res = await session.execute(stmt)
     return res.scalar_one_or_none()
+
+
+async def get_all_users(session: AsyncSession) -> List[User]:
+    """Возвращает список всех зарегистрированных пользователей бота."""
+    stmt = select(User).order_by(User.created_at.desc())
+    res = await session.execute(stmt)
+    return list(res.scalars().all())
+

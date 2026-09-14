@@ -24,6 +24,11 @@ export function initTelegramApp() {
     if (app.setBackgroundColor) {
       app.setBackgroundColor('#0c0f17');
     }
+    // Отключаем вертикальные свайпы закрытия Telegram Mini App,
+    // чтобы жесты свайпа карточки на Android не конфликтовали со шторкой Telegram
+    if (typeof app.disableVerticalSwipes === 'function') {
+      app.disableVerticalSwipes();
+    }
   } catch (e) {
     console.warn("Telegram WebApp init error:", e);
   }
@@ -36,7 +41,7 @@ export function getTelegramInitData(): string {
 export function hapticImpact(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft' = 'medium') {
   try {
     tg()?.HapticFeedback?.impactOccurred(style);
-  } catch (e) {
+  } catch {
     // Ignore in standard desktop browsers
   }
 }
@@ -44,7 +49,7 @@ export function hapticImpact(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'so
 export function hapticNotification(type: 'error' | 'success' | 'warning') {
   try {
     tg()?.HapticFeedback?.notificationOccurred(type);
-  } catch (e) {
+  } catch {
     // Ignore
   }
 }
@@ -52,7 +57,7 @@ export function hapticNotification(type: 'error' | 'success' | 'warning') {
 export function hapticSelection() {
   try {
     tg()?.HapticFeedback?.selectionChanged();
-  } catch (e) {
+  } catch {
     // Ignore
   }
 }

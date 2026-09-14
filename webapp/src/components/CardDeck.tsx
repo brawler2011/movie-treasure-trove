@@ -91,20 +91,22 @@ export const CardDeck: React.FC<CardDeckProps> = ({
           </motion.div>
         ) : (
           /* Cards Deck */
-          <div className="relative w-full h-full max-w-sm aspect-[2/3] max-h-[560px]">
+          <div className="relative w-full h-full max-w-sm aspect-[2/3] max-h-[560px] touch-none select-none">
             {/* 3rd Card in stack */}
             {thirdMovie && (
-              <div className="absolute inset-0 rounded-3xl bg-[#161b26] border border-white/5 shadow-md scale-[0.88] translate-y-7 opacity-40 transition-all pointer-events-none" />
+              <div className="absolute inset-0 rounded-3xl bg-[#161b26] border border-white/5 shadow-sm scale-[0.88] translate-y-7 opacity-40 transition-transform duration-300 pointer-events-none will-change-transform" />
             )}
 
             {/* 2nd Card in stack */}
             {nextMovie && (
-              <div className="absolute inset-0 rounded-3xl bg-[#161b26] border border-white/10 shadow-lg scale-[0.94] translate-y-3.5 opacity-80 transition-all pointer-events-none overflow-hidden">
+              <div className="absolute inset-0 rounded-3xl bg-[#161b26] border border-white/10 shadow-md scale-[0.94] translate-y-3.5 opacity-80 transition-transform duration-300 pointer-events-none overflow-hidden will-change-transform">
                 {nextMovie.poster_url && (
                   <img
                     src={nextMovie.poster_url}
                     alt={nextMovie.name_ru}
-                    className="w-full h-full object-cover filter blur-[1px] opacity-70"
+                    loading="lazy"
+                    decoding="async"
+                    className="w-full h-full object-cover opacity-60 pointer-events-none select-none"
                   />
                 )}
                 <div className="absolute inset-0 bg-black/40" />

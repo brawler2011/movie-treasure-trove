@@ -11,7 +11,7 @@ interface SwipeCardProps {
   onOpenDetails: () => void;
 }
 
-export const SwipeCard: React.FC<SwipeCardProps> = ({
+const SwipeCardComponent: React.FC<SwipeCardProps> = ({
   movie,
   isTop,
   onSwipe,
@@ -34,24 +34,31 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
     const threshold = 100;
     const velocityThreshold = 400;
 
+    const absX = Math.abs(info.offset.x);
+    const absY = Math.abs(info.offset.y);
+    const isHorizontal = absX >= absY;
+
+    // Свайп влево / вправо при доминирующем горизонтальном сдвиге
+    if (isHorizontal) {
+      // Свайп вправо (Лайк)
+      if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
+        hapticImpact('heavy');
+        onSwipe('right');
+        return;
+      }
+
+      // Свайп влево (Дизлайк)
+      if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
+        hapticImpact('medium');
+        onSwipe('left');
+        return;
+      }
+    }
+
     // Свайп вверх (Буду смотреть)
     if (info.offset.y < -threshold || info.velocity.y < -velocityThreshold) {
       hapticImpact('heavy');
       onSwipe('up');
-      return;
-    }
-
-    // Свайп вправо (Лайк)
-    if (info.offset.x > threshold || info.velocity.x > velocityThreshold) {
-      hapticImpact('heavy');
-      onSwipe('right');
-      return;
-    }
-
-    // Свайп влево (Дизлайк)
-    if (info.offset.x < -threshold || info.velocity.x < -velocityThreshold) {
-      hapticImpact('medium');
-      onSwipe('left');
       return;
     }
   };
@@ -61,15 +68,18 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
       style={{
         x: isTop ? x : 0,
         y: isTop ? y : 0,
+        z: 0,
         rotate: isTop ? rotate : 0,
+        willChange: isTop ? 'transform' : undefined,
+        WebkitBackfaceVisibility: 'hidden',
+        backfaceVisibility: 'hidden',
       }}
       drag={isTop}
-      dragElastic={0.65}
-      dragConstraints={{ left: 0, right: 0, top: 0, bottom: 0 }}
+      dragSnapToOrigin={true}
+      dragTransition={{ bounceStiffness: 600, bounceDamping: 38 }}
       onDragEnd={handleDragEnd}
-      whileTap={isTop ? { cursor: 'grabbing' } : undefined}
-      className={`absolute inset-0 rounded-3xl overflow-hidden shadow-2xl transition-shadow select-none bg-[#161b26] border border-white/10 ${
-        isTop ? 'cursor-grab active:cursor-grabbing z-20' : 'z-10'
+      className={`absolute inset-0 rounded-3xl overflow-hidden shadow-xl select-none bg-[#161b26] border border-white/10 touch-none ${
+        isTop ? 'cursor-grab active:cursor-grabbing z-20 will-change-transform' : 'z-10'
       }`}
     >
       {/* Movie Poster Full Cover */}
@@ -79,7 +89,9 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
             src={movie.poster_url}
             alt={movie.name_ru}
             draggable={false}
-            className="w-full h-full object-cover object-center pointer-events-none"
+            loading="eager"
+            decoding="async"
+            className="w-full h-full object-cover object-center pointer-events-none select-none"
           />
         ) : (
           <div className="w-full h-full flex flex-col items-center justify-center text-slate-600">
@@ -91,27 +103,27 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
         {/* Cinematic Gradient Overlays */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/35 to-black/10 pointer-events-none" />
 
-        {/* Top Badges (Rating & Type) */}
+        {/* Top Badges (Rating & Type) - opaque dark background to avoid mobile GPU backdrop-filter lag */}
         <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-none z-10">
           {movie.rating_kinopoisk ? (
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-white font-bold text-xs shadow-lg">
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0c0f17]/85 border border-white/15 text-white font-bold text-xs shadow-md">
               <Star size={14} className="fill-orange-400 text-orange-400" />
               <span>{movie.rating_kinopoisk.toFixed(1)}</span>
             </div>
           ) : <div />}
 
-          <div className="px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 text-slate-300 font-semibold text-xs shadow-lg">
+          <div className="px-3 py-1.5 rounded-full bg-[#0c0f17]/85 border border-white/15 text-slate-300 font-semibold text-xs shadow-md">
             {movie.type === 'TV_SERIES' ? 'Сериал' : 'Фильм'}
           </div>
         </div>
 
-        {/* Dynamic Overlay Stamps when swiping */}
+        {/* Dynamic Overlay Stamps when swiping - using solid dark backdrop for 60/120fps GPU performance */}
         {isTop && (
           <>
             {/* LIKE Stamp */}
             <motion.div
-              style={{ opacity: likeOpacity }}
-              className="absolute top-16 left-6 rotate-[-18deg] px-4 py-2 rounded-2xl border-4 border-emerald-500 bg-emerald-500/20 backdrop-blur-sm pointer-events-none z-30 shadow-glow-like"
+              style={{ opacity: likeOpacity, willChange: 'opacity' }}
+              className="absolute top-16 left-6 rotate-[-18deg] px-4 py-2 rounded-2xl border-4 border-emerald-500 bg-[#0c0f17]/90 pointer-events-none z-30 shadow-glow-like"
             >
               <div className="flex items-center gap-2 text-emerald-400 font-black tracking-widest text-2xl uppercase">
                 <Heart size={28} className="fill-emerald-400" />
@@ -121,8 +133,8 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 
             {/* NOPE Stamp */}
             <motion.div
-              style={{ opacity: nopeOpacity }}
-              className="absolute top-16 right-6 rotate-[18deg] px-4 py-2 rounded-2xl border-4 border-rose-500 bg-rose-500/20 backdrop-blur-sm pointer-events-none z-30 shadow-glow-dislike"
+              style={{ opacity: nopeOpacity, willChange: 'opacity' }}
+              className="absolute top-16 right-6 rotate-[18deg] px-4 py-2 rounded-2xl border-4 border-rose-500 bg-[#0c0f17]/90 pointer-events-none z-30 shadow-glow-dislike"
             >
               <div className="flex items-center gap-2 text-rose-400 font-black tracking-widest text-2xl uppercase">
                 <X size={28} />
@@ -132,8 +144,8 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
 
             {/* WATCHLIST Stamp */}
             <motion.div
-              style={{ opacity: watchOpacity }}
-              className="absolute bottom-36 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-2xl border-4 border-amber-500 bg-amber-500/20 backdrop-blur-sm pointer-events-none z-30 shadow-glow-watch"
+              style={{ opacity: watchOpacity, willChange: 'opacity' }}
+              className="absolute bottom-36 left-1/2 -translate-x-1/2 px-5 py-2.5 rounded-2xl border-4 border-amber-500 bg-[#0c0f17]/90 pointer-events-none z-30 shadow-glow-watch"
             >
               <div className="flex items-center gap-2 text-amber-300 font-black tracking-wider text-xl uppercase">
                 <Bookmark size={24} className="fill-amber-300" />
@@ -177,7 +189,7 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
                 hapticImpact('light');
                 onOpenDetails();
               }}
-              className="p-3 rounded-full bg-white/10 hover:bg-white/20 active:scale-90 backdrop-blur-md border border-white/20 text-white shrink-0 transition-all shadow-lg"
+              className="p-3 rounded-full bg-slate-900/80 hover:bg-slate-800 active:scale-90 border border-white/20 text-white shrink-0 transition-transform shadow-md"
               title="Подробнее о фильме"
             >
               <Info size={22} />
@@ -188,3 +200,9 @@ export const SwipeCard: React.FC<SwipeCardProps> = ({
     </motion.div>
   );
 };
+
+export const SwipeCard = React.memo<SwipeCardProps>(
+  SwipeCardComponent,
+  (prev, next) => prev.movie.id === next.movie.id && prev.isTop === next.isTop
+);
+
