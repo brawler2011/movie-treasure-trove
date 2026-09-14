@@ -93,8 +93,6 @@ jobs:
                       memory: 1024M
                 env_file:
                   - .env
-                ports:
-                  - "8080:8080"
                 volumes:
                   - ./data:/app/data
                 environment:
