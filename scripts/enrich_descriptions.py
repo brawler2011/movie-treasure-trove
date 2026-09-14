@@ -97,6 +97,15 @@ async def enrich_all_movies(batch_size: int = 20, max_concurrency: int = 15):
                     if not db_movie.web_url and getattr(details, "web_url", None):
                         db_movie.web_url = details.web_url
 
+                    fd_type = getattr(details, "type_", getattr(details, "type", None))
+                    is_serial = getattr(details, "serial", None)
+                    if fd_type:
+                        val = getattr(fd_type, "value", fd_type)
+                        if val:
+                            db_movie.type = str(val)
+                    elif is_serial:
+                        db_movie.type = "TV_SERIES"
+
                     # Формируем текст для обновленного эмбеддинга
                     text = MovieEmbedder.build_movie_text(
                         name_ru=db_movie.name_ru,

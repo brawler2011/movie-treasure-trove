@@ -127,9 +127,25 @@ def get_search_card_keyboard(movie_id: int) -> InlineKeyboardMarkup:
 
 def get_genre_filter_keyboard(
     active_genre: Optional[str] = None,
+    active_type: Optional[str] = None,
 ) -> InlineKeyboardMarkup:
-    """Клавиатура выбора жанра для фильтрации рекомендаций"""
-    buttons = []
+    """Клавиатура выбора типа контента и жанра для фильтрации рекомендаций"""
+    buttons = [
+        [
+            InlineKeyboardButton(
+                "🎬 Фильмы" + (" ✅" if active_type == "FILM" else ""),
+                callback_data="set_type_FILM",
+            ),
+            InlineKeyboardButton(
+                "📺 Сериалы" + (" ✅" if active_type == "TV_SERIES" else ""),
+                callback_data="set_type_TV_SERIES",
+            ),
+            InlineKeyboardButton(
+                "🌟 Любой" + (" ✅" if not active_type else ""),
+                callback_data="reset_type",
+            ),
+        ]
+    ]
     row = []
     for g in POPULAR_GENRES:
         title = f"✅ {g.capitalize()}" if active_genre == g else g.capitalize()
@@ -143,7 +159,7 @@ def get_genre_filter_keyboard(
     # Кнопки сброса и возврата
     buttons.append(
         [
-            InlineKeyboardButton("❌ Сбросить фильтр", callback_data="reset_genre"),
+            InlineKeyboardButton("❌ Сбросить всё", callback_data="reset_genre"),
             InlineKeyboardButton("🎬 К рекомендациям", callback_data="feed_start"),
         ]
     )

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bookmark, Heart, Star, Trash2, Film, RefreshCw } from 'lucide-react';
+import { Bookmark, Heart, Star, Trash2, Film, Tv, RefreshCw } from 'lucide-react';
 import type { Movie } from '../types';
 import { deleteFromList, fetchLists } from '../api';
 import { DetailModal } from './DetailModal';
@@ -139,13 +139,27 @@ export const ListsTab: React.FC<ListsTabProps> = ({ onOpenDeck }) => {
                 {/* Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
 
-                {/* Rating Badge */}
-                {movie.rating_kinopoisk && (
-                  <div className="absolute top-2 left-2 flex items-center gap-1 px-2 py-0.5 rounded-md bg-black/70 backdrop-blur-sm text-xs font-bold text-orange-400 border border-white/10">
-                    <Star size={11} className="fill-orange-400" />
-                    <span>{movie.rating_kinopoisk.toFixed(1)}</span>
-                  </div>
-                )}
+                {/* Top Badges (Rating & Type) */}
+                <div className="absolute top-2 left-2 flex items-center gap-1">
+                  {movie.rating_kinopoisk && (
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-[11px] font-bold text-orange-400 border border-white/10">
+                      <Star size={10} className="fill-orange-400" />
+                      <span>{movie.rating_kinopoisk.toFixed(1)}</span>
+                    </div>
+                  )}
+                  {(() => {
+                    const isSeries = ['TV_SERIES', 'MINI_SERIES', 'TV_SHOW'].includes((movie.type || '').toUpperCase());
+                    const typeLabel = (movie.type || '').toUpperCase() === 'MINI_SERIES' ? 'Мини-сериал' : (isSeries ? 'Сериал' : 'Фильм');
+                    return (
+                      <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-black/75 backdrop-blur-sm text-[10px] font-semibold border ${
+                        isSeries ? 'text-sky-300 border-sky-500/30' : 'text-slate-300 border-white/10'
+                      }`}>
+                        {isSeries ? <Tv size={10} className="text-sky-400" /> : <Film size={10} className="text-amber-400" />}
+                        <span>{typeLabel}</span>
+                      </div>
+                    );
+                  })()}
+                </div>
 
                 {/* Delete button */}
                 <button
@@ -161,11 +175,13 @@ export const ListsTab: React.FC<ListsTabProps> = ({ onOpenDeck }) => {
                   <p className="text-xs font-bold text-white line-clamp-2 leading-tight">
                     {movie.name_ru}
                   </p>
-                  {movie.year && (
-                    <span className="text-[10px] text-slate-400 font-medium">
-                      {movie.year}
+                  <div className="flex items-center gap-1 mt-0.5 text-[10px] text-slate-400 font-medium">
+                    {movie.year && <span>{movie.year}</span>}
+                    {movie.year && <span>•</span>}
+                    <span className={['TV_SERIES', 'MINI_SERIES', 'TV_SHOW'].includes((movie.type || '').toUpperCase()) ? 'text-sky-300' : 'text-slate-400'}>
+                      {(movie.type || '').toUpperCase() === 'MINI_SERIES' ? 'Мини-сериал' : (['TV_SERIES', 'MINI_SERIES', 'TV_SHOW'].includes((movie.type || '').toUpperCase()) ? 'Сериал' : 'Фильм')}
                     </span>
-                  )}
+                  </div>
                 </div>
               </div>
             ))}

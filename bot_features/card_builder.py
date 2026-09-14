@@ -43,6 +43,15 @@ async def ensure_movie_description(
                 if not movie.web_url and getattr(film_details, "web_url", None):
                     movie.web_url = film_details.web_url
 
+                fd_type = getattr(film_details, "type_", getattr(film_details, "type", None))
+                is_serial = getattr(film_details, "serial", None)
+                if fd_type:
+                    val = getattr(fd_type, "value", fd_type)
+                    if val:
+                        movie.type = str(val)
+                elif is_serial:
+                    movie.type = "TV_SERIES"
+
                 if session:
                     session.add(movie)
                     await session.commit()
@@ -57,12 +66,27 @@ async def ensure_movie_description(
     return movie
 
 
+def get_content_type_info(movie: Movie) -> Tuple[str, str, str]:
+    """
+    Возвращает (иконка, название_типа, метка_хронометража).
+    Например: ("📺", "Сериал", "Серия:") или ("🎬", "Фильм", "Время:")
+    """
+    raw_type = (movie.type or "FILM").upper()
+    if raw_type == "MINI_SERIES":
+        return "📺", "Мини-сериал", "Серия:"
+    elif raw_type in ("TV_SERIES", "TV_SHOW"):
+        return "📺", "Сериал", "Серия:"
+    else:
+        return "🎬", "Фильм", "Время:"
+
+
 def format_movie_caption(movie: Movie, max_length: int = 1000) -> str:
-    """Форматирует красивую карточку фильма для отправки в Telegram"""
+    """Форматирует красивую карточку фильма или сериала для отправки в Telegram"""
     title = movie.name_ru or movie.name_original or "Без названия"
     year_str = f" ({movie.year})" if movie.year else ""
+    icon, type_label, length_label = get_content_type_info(movie)
 
-    lines = [f"🎬 <b>{title}</b>{year_str}\n"]
+    lines = [f"{icon} <b>{title}</b>{year_str}\n"]
 
     # Рейтинги
     ratings = []
@@ -72,6 +96,9 @@ def format_movie_caption(movie: Movie, max_length: int = 1000) -> str:
         ratings.append(f"IMDb: <b>{movie.rating_imdb}</b>")
     if ratings:
         lines.append(" | ".join(ratings))
+
+    # Тип контента (Фильм / Сериал)
+    lines.append(f"📽️ Тип: <b>{type_label}</b>")
 
     # Жанры
     genres = movie.genres
@@ -85,7 +112,7 @@ def format_movie_caption(movie: Movie, max_length: int = 1000) -> str:
 
     # Хронометраж
     if movie.film_length:
-        lines.append(f"⏱ Время: {movie.film_length} мин.")
+        lines.append(f"⏱ {length_label} {movie.film_length} мин.")
 
     # Ссылки
     links = []

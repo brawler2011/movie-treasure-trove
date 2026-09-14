@@ -111,7 +111,14 @@ async def seed_database(max_films: int = 2500, fast_mode: bool = False):
                             "short_description": getattr(
                                 item, "short_description", None
                             ),
-                            "type": str(getattr(item, "type", "FILM")),
+                            "type": str(
+                                getattr(
+                                    getattr(item, "type_", None),
+                                    "value",
+                                    getattr(item, "type_", None),
+                                )
+                                or "FILM"
+                            ),
                             "genres": genres,
                             "countries": countries,
                             "web_url": getattr(

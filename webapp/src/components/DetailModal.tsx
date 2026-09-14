@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, Calendar, Clock, Film, ExternalLink } from 'lucide-react';
+import { X, Star, Calendar, Clock, Film, Tv, ExternalLink } from 'lucide-react';
 import type { Movie } from '../types';
 import { hapticImpact } from '../telegram';
 
@@ -11,6 +11,9 @@ interface DetailModalProps {
 
 export const DetailModal: React.FC<DetailModalProps> = ({ movie, onClose }) => {
   if (!movie) return null;
+
+  const isSeries = ['TV_SERIES', 'MINI_SERIES', 'TV_SHOW'].includes((movie.type || '').toUpperCase());
+  const typeLabel = (movie.type || '').toUpperCase() === 'MINI_SERIES' ? 'Мини-сериал' : (isSeries ? 'Сериал' : 'Фильм');
 
   const formatLength = (minutes?: number | null) => {
     if (!minutes) return null;
@@ -106,11 +109,16 @@ export const DetailModal: React.FC<DetailModalProps> = ({ movie, onClose }) => {
               {movie.film_length && (
                 <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
                   <Clock size={13} />
-                  <span>{formatLength(movie.film_length)}</span>
+                  <span>{isSeries ? `${formatLength(movie.film_length)} / серия` : formatLength(movie.film_length)}</span>
                 </div>
               )}
-              <div className="px-3 py-1.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30">
-                {movie.type === 'TV_SERIES' ? 'Сериал' : 'Фильм'}
+              <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full ${
+                isSeries
+                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30'
+                  : 'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+              }`}>
+                {isSeries ? <Tv size={13} className="text-sky-400" /> : <Film size={13} className="text-blue-400" />}
+                <span>{typeLabel}</span>
               </div>
             </div>
 

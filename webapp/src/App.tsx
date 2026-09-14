@@ -1,12 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Sparkles, RefreshCw } from 'lucide-react';
 import type { FilterSettings, Movie, SwipeDirection, UserProfile } from './types';
 import { fetchProfile, fetchRecommendations, sendSwipe, sendUndo } from './api';
 import { CardDeck } from './components/CardDeck';
 import { ListsTab } from './components/ListsTab';
 import { FiltersTab } from './components/FiltersTab';
 import { BottomNav, type TabType } from './components/BottomNav';
-import { initTelegramApp, hapticImpact } from './telegram';
+import { initTelegramApp } from './telegram';
 
 export const App: React.FC = () => {
   const [activeTab, setActiveTab] = useState<TabType>('deck');
@@ -134,50 +133,6 @@ export const App: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full w-full bg-[#0c0f17] text-white relative select-none">
-      {/* Top App Header */}
-      <header className="w-full max-w-md mx-auto px-4 pt-3 pb-2 flex items-center justify-between z-30 shrink-0 border-b border-white/5">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-orange-600 to-amber-500 flex items-center justify-center shadow-lg shadow-orange-900/30">
-            <span className="text-base">🎬</span>
-          </div>
-          <div>
-            <h1 className="text-sm font-extrabold tracking-tight text-white flex items-center gap-1.5">
-              <span>Кинокладезь</span>
-              <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-400 border border-orange-500/30">
-                TMA
-              </span>
-            </h1>
-            <p className="text-[10px] font-medium text-slate-400">kino.steins.ru</p>
-          </div>
-        </div>
-
-        {/* User Stats / Active Filters pill */}
-        <div className="flex items-center gap-2">
-          {filters.genre !== 'Все' || filters.type !== 'ALL' || filters.minRating > 0 ? (
-            <button
-              onClick={() => {
-                hapticImpact('light');
-                setActiveTab('filters');
-              }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-orange-500/20 text-orange-300 border border-orange-500/30 text-[11px] font-bold"
-            >
-              <Sparkles size={11} />
-              <span>Фильтры</span>
-            </button>
-          ) : null}
-
-          <button
-            onClick={() => {
-              hapticImpact('light');
-              loadRecommendations(filters, true);
-            }}
-            className="p-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-slate-300 border border-white/10 transition-all"
-            title="Обновить рекомендации"
-          >
-            <RefreshCw size={15} className={loading ? 'animate-spin' : ''} />
-          </button>
-        </div>
-      </header>
 
       {/* Main Tab View */}
       <main className="flex-1 flex flex-col overflow-hidden relative">

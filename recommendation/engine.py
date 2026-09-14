@@ -212,7 +212,13 @@ class RecommendationEngine:
             # Базовый запрос
             stmt = select(Movie).where(~Movie.id.in_(excluded_ids))
             if type_filter and type_filter != "ALL":
-                stmt = stmt.where(Movie.type == type_filter)
+                tf = type_filter.upper()
+                if tf in ("TV_SERIES", "SERIES"):
+                    stmt = stmt.where(Movie.type.in_(["TV_SERIES", "MINI_SERIES", "TV_SHOW"]))
+                elif tf == "FILM":
+                    stmt = stmt.where(~Movie.type.in_(["TV_SERIES", "MINI_SERIES", "TV_SHOW"]))
+                else:
+                    stmt = stmt.where(Movie.type == type_filter)
             if min_rating is not None:
                 stmt = stmt.where(Movie.rating_kinopoisk >= min_rating)
             if min_year is not None:

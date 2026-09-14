@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, useMotionValue, useTransform, type PanInfo } from 'framer-motion';
-import { Star, Info, Film, Heart, X, Bookmark } from 'lucide-react';
+import { Star, Info, Film, Tv, Heart, X, Bookmark } from 'lucide-react';
 import type { Movie, SwipeDirection } from '../types';
 import { hapticImpact } from '../telegram';
 
@@ -17,6 +17,9 @@ const SwipeCardComponent: React.FC<SwipeCardProps> = ({
   onSwipe,
   onOpenDetails,
 }) => {
+  const isSeries = ['TV_SERIES', 'MINI_SERIES', 'TV_SHOW'].includes((movie.type || '').toUpperCase());
+  const typeLabel = (movie.type || '').toUpperCase() === 'MINI_SERIES' ? 'Мини-сериал' : (isSeries ? 'Сериал' : 'Фильм');
+
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
@@ -112,8 +115,11 @@ const SwipeCardComponent: React.FC<SwipeCardProps> = ({
             </div>
           ) : <div />}
 
-          <div className="px-3 py-1.5 rounded-full bg-[#0c0f17]/85 border border-white/15 text-slate-300 font-semibold text-xs shadow-md">
-            {movie.type === 'TV_SERIES' ? 'Сериал' : 'Фильм'}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-[#0c0f17]/90 border ${
+            isSeries ? 'border-sky-500/40 text-sky-300' : 'border-white/15 text-slate-300'
+          } font-semibold text-xs shadow-md`}>
+            {isSeries ? <Tv size={13} className="text-sky-400" /> : <Film size={13} className="text-amber-400" />}
+            <span>{typeLabel}</span>
           </div>
         </div>
 

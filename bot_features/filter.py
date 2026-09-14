@@ -31,7 +31,9 @@ async def filter_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         "Выбери жанр для рекомендаций ниже:"
     )
 
-    keyboard = get_genre_filter_keyboard(active_genre=active_genre)
+    keyboard = get_genre_filter_keyboard(
+        active_genre=active_genre, active_type=active_type
+    )
 
     if update.callback_query:
         await update.callback_query.answer()
@@ -61,13 +63,14 @@ async def handle_set_genre(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 async def handle_reset_genre(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
-    """Сброс жанрового фильтра"""
+    """Сброс всех фильтров (жанр и тип)"""
     query = update.callback_query
     if not query:
         return
 
     context.user_data["active_genre"] = None
-    await query.answer("❌ Фильтр жанра сброшен")
+    context.user_data["active_type"] = None
+    await query.answer("❌ Фильтры сброшены")
     await filter_command(update, context)
 
 

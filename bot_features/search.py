@@ -138,7 +138,18 @@ async def handle_search_query(
                             "short_description": getattr(
                                 film_details, "short_description", None
                             ),
-                            "type": str(getattr(film_details, "type", "FILM")),
+                            "type": str(
+                                getattr(
+                                    getattr(film_details, "type_", None),
+                                    "value",
+                                    getattr(film_details, "type_", None),
+                                )
+                                or (
+                                    "TV_SERIES"
+                                    if getattr(film_details, "serial", False)
+                                    else "FILM"
+                                )
+                            ),
                             "genres": genres,
                             "countries": countries,
                             "web_url": getattr(
@@ -263,7 +274,9 @@ async def inline_search(
 
         for m in movies:
             title = m.name_ru or m.name_original or "Без названия"
-            desc = f"{m.year or ''} | КП: {m.rating_kinopoisk or '—'} | {', '.join(m.genres[:2])}"
+            is_series = (m.type or "").upper() in ("TV_SERIES", "MINI_SERIES", "TV_SHOW")
+            type_tag = "📺 Сериал" if is_series else "🎬 Фильм"
+            desc = f"{type_tag} | {m.year or ''} | КП: {m.rating_kinopoisk or '—'} | {', '.join(m.genres[:2])}"
             caption = format_movie_caption(m)
             results.append(
                 InlineQueryResultArticle(
