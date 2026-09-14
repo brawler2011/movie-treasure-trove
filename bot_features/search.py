@@ -8,7 +8,7 @@ from sqlalchemy import select
 from database.session import async_session_factory
 from database.crud import ensure_user, record_interaction, upsert_movie
 from database.models import Movie
-from bot_features.card_builder import format_movie_caption
+from bot_features.card_builder import format_movie_caption, ensure_movie_description
 from bot_features.keyboards import (
     get_search_card_keyboard,
     get_main_menu_keyboard,
@@ -186,6 +186,8 @@ async def handle_search_query(
 
     # Отправляем карточки найденных фильмов
     for movie in local_movies:
+        async with async_session_factory() as session:
+            await ensure_movie_description(movie, session=session)
         caption = format_movie_caption(movie)
         keyboard = get_search_card_keyboard(movie.id)
         poster = movie.poster_url_preview or movie.poster_url

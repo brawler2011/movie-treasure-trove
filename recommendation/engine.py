@@ -176,6 +176,8 @@ class RecommendationEngine:
         limit: int = 10,
         genre_filter: Optional[str] = None,
         type_filter: Optional[str] = None,
+        min_rating: Optional[float] = None,
+        min_year: Optional[int] = None,
     ) -> List[Movie]:
         """
         Возвращает топ персональных рекомендаций для пользователя с учетом фильтров.
@@ -207,13 +209,19 @@ class RecommendationEngine:
             inter_res = await session.execute(inter_stmt)
             excluded_ids: Set[int] = set(inter_res.scalars().all())
 
+            # Базовый запрос
+            stmt = select(Movie).where(~Movie.id.in_(excluded_ids))
+            if type_filter and type_filter != "ALL":
+                stmt = stmt.where(Movie.type == type_filter)
+            if min_rating is not None:
+                stmt = stmt.where(Movie.rating_kinopoisk >= min_rating)
+            if min_year is not None:
+                stmt = stmt.where(Movie.year >= min_year)
+
             # Если вектора вкуса нет (холодный старт), рекомендуем топ по рейтингу
             if taste_vector is None:
-                stmt = select(Movie).where(~Movie.id.in_(excluded_ids))
-                if type_filter:
-                    stmt = stmt.where(Movie.type == type_filter)
                 stmt = stmt.order_by(Movie.rating_kinopoisk.desc().nullslast()).limit(
-                    limit * 2
+                    limit * 3
                 )
                 res = await session.execute(stmt)
                 candidates = res.scalars().all()
@@ -225,17 +233,10 @@ class RecommendationEngine:
                             genre_filter.lower() in g.lower() for g in (m.genres or [])
                         )
                     ]
-                return candidates[:limit]
+                return list(candidates[:limit])
 
             # 3. Скоринг через матричное умножение (косинусное сходство)
-            # self._embedding_matrix: (N, 312), taste_vector: (312,)
             sims = self._embedding_matrix @ taste_vector  # (N,)
-
-            # Формируем список кандидатов с фильтрацией
-            # Загрузим кандидатов из БД пачкой
-            stmt = select(Movie).where(~Movie.id.in_(excluded_ids))
-            if type_filter:
-                stmt = stmt.where(Movie.type == type_filter)
 
             res = await session.execute(stmt)
             all_available_movies = res.scalars().all()

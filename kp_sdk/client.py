@@ -3,6 +3,7 @@ import logging
 import os
 import time
 from typing import Optional
+import httpx
 
 from kinopoisk_generated_client.client import AuthenticatedClient
 from kinopoisk_generated_client.api.films import (
@@ -55,6 +56,7 @@ class KinopoiskSDK:
                 token=self.api_key,
                 auth_header_name="X-API-KEY",
                 prefix="",
+                timeout=httpx.Timeout(10.0, connect=5.0),
             )
         return self._client
 
@@ -80,7 +82,10 @@ class KinopoiskSDK:
         for attempt in range(self.max_retries + 1):
             await self._rate_limit_wait()
             try:
-                result = await api_func.asyncio(client=self._get_client(), **kwargs)
+                result = await asyncio.wait_for(
+                    api_func.asyncio(client=self._get_client(), **kwargs),
+                    timeout=12.0,
+                )
                 if result is not None:
                     return result
                 # Если вернулся None (например, 429 или временная ошибка), делаем backoff
@@ -96,13 +101,16 @@ class KinopoiskSDK:
             except Exception as e:
                 if attempt < self.max_retries:
                     logger.warning(
-                        "Ошибка запроса: %s. Повтор через %.1f сек", e, backoff
+                        "Ошибка запроса (%s): %s. Повтор через %.1f сек",
+                        type(e).__name__,
+                        e,
+                        backoff,
                     )
                     await asyncio.sleep(backoff)
                     backoff *= 2.0
                 else:
                     logger.error("Превышено количество попыток запроса: %s", e)
-                    raise
+                    return None
         return None
 
     async def get_collection(

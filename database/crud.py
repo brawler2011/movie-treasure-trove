@@ -181,3 +181,53 @@ async def remove_from_watchlist(
         UserInteraction.action == "WATCHLIST",
     )
     await session.execute(stmt)
+
+
+async def delete_user_interaction(
+    session: AsyncSession,
+    telegram_id: int,
+    movie_id: int,
+    action: Optional[str] = None,
+):
+    stmt = delete(UserInteraction).where(
+        UserInteraction.telegram_id == telegram_id,
+        UserInteraction.movie_id == movie_id,
+    )
+    if action:
+        stmt = stmt.where(UserInteraction.action == action)
+    await session.execute(stmt)
+
+
+async def get_user_stats(
+    session: AsyncSession,
+    telegram_id: int,
+) -> Dict[str, int]:
+    from sqlalchemy import func
+
+    stmt = (
+        select(UserInteraction.action, func.count(UserInteraction.id))
+        .where(UserInteraction.telegram_id == telegram_id)
+        .group_by(UserInteraction.action)
+    )
+    res = await session.execute(stmt)
+    counts = dict(res.all())
+    return {
+        "likes": counts.get("LIKE", 0),
+        "dislikes": counts.get("DISLIKE", 0),
+        "watchlist": counts.get("WATCHLIST", 0),
+    }
+
+
+async def get_last_user_interaction(
+    session: AsyncSession,
+    telegram_id: int,
+) -> Optional[UserInteraction]:
+    stmt = (
+        select(UserInteraction)
+        .options(selectinload(UserInteraction.movie))
+        .where(UserInteraction.telegram_id == telegram_id)
+        .order_by(UserInteraction.created_at.desc())
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()

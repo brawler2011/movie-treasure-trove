@@ -5,7 +5,7 @@ from telegram.ext import ContextTypes
 
 from database.session import async_session_factory
 from database.crud import ensure_user, record_interaction
-from bot_features.card_builder import format_movie_caption
+from bot_features.card_builder import format_movie_caption, ensure_movie_description
 from bot_features.keyboards import get_rec_card_keyboard, get_main_menu_keyboard
 from recommendation.engine import get_recommendation_engine
 
@@ -66,6 +66,8 @@ async def send_next_recommendation(
         return
 
     movie = recs[0]
+    async with async_session_factory() as session:
+        await ensure_movie_description(movie, session=session)
     caption = format_movie_caption(movie)
     keyboard = get_rec_card_keyboard(movie.id, current_genre=genre_filter)
 

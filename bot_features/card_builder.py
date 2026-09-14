@@ -1,6 +1,60 @@
+import logging
 from typing import Optional, Tuple
+from sqlalchemy.ext.asyncio import AsyncSession
 from telegram import InlineKeyboardMarkup
 from database.models import Movie
+from kp_sdk.client import KinopoiskSDK
+
+logger = logging.getLogger(__name__)
+
+
+async def ensure_movie_description(
+    movie: Movie, session: Optional[AsyncSession] = None
+) -> Movie:
+    """
+    Проверяет наличие описания у фильма. Если описание отсутствует в БД,
+    подгружает его через Kinopoisk API и сохраняет в сессии.
+    """
+    if movie.description or movie.short_description:
+        return movie
+
+    if not movie.kinopoisk_id:
+        return movie
+
+    try:
+        sdk = KinopoiskSDK()
+        async with sdk:
+            film_details = await sdk.get_film_details(movie.kinopoisk_id)
+            if film_details:
+                desc = getattr(film_details, "description", None)
+                short_desc = getattr(film_details, "short_description", None)
+                if desc:
+                    movie.description = desc
+                if short_desc:
+                    movie.short_description = short_desc
+                if not movie.film_length and getattr(film_details, "film_length", None):
+                    movie.film_length = film_details.film_length
+                if not movie.poster_url and getattr(film_details, "poster_url", None):
+                    movie.poster_url = film_details.poster_url
+                if not movie.poster_url_preview and getattr(
+                    film_details, "poster_url_preview", None
+                ):
+                    movie.poster_url_preview = film_details.poster_url_preview
+                if not movie.web_url and getattr(film_details, "web_url", None):
+                    movie.web_url = film_details.web_url
+
+                if session:
+                    session.add(movie)
+                    await session.commit()
+    except Exception as e:
+        logger.warning(
+            "Не удалось подгрузить описание для фильма %s (ID %s): %s",
+            movie.name_ru,
+            movie.kinopoisk_id,
+            e,
+        )
+
+    return movie
 
 
 def format_movie_caption(movie: Movie, max_length: int = 1000) -> str:
@@ -44,21 +98,47 @@ def format_movie_caption(movie: Movie, max_length: int = 1000) -> str:
 
     links_text = f"\n{' • '.join(links)}" if links else ""
 
-    desc = (movie.short_description or movie.description or "").strip()
+    short_desc = (movie.short_description or "").strip()
+    full_desc = (movie.description or "").strip()
 
-    # Сборка без усечения
-    parts = list(lines)
-    if desc:
-        parts.extend(["", f"📝 {desc}"])
+    # Формируем блок описания
+    desc_elements = []
+    if short_desc and full_desc and short_desc.lower() not in full_desc.lower():
+        desc_elements = ["", f"<i>«{short_desc}»</i>", "", f"📝 {full_desc}"]
+    elif full_desc:
+        desc_elements = ["", f"📝 {full_desc}"]
+    elif short_desc:
+        desc_elements = ["", f"📝 {short_desc}"]
+
+    parts = list(lines) + desc_elements
     if links_text:
         parts.append(links_text)
 
     full_text = "\n".join(parts)
-    if len(full_text) > max_length and desc:
-        overflow = len(full_text) - max_length + 20
-        truncated_desc = desc[:-overflow].strip() + "..."
-        parts = list(lines)
-        parts.extend(["", f"📝 {truncated_desc}"])
+
+    # Если превышает max_length, сначала убираем слоган/цитату
+    if len(full_text) > max_length and short_desc and full_desc:
+        desc_elements = ["", f"📝 {full_desc}"]
+        parts = list(lines) + desc_elements
+        if links_text:
+            parts.append(links_text)
+        full_text = "\n".join(parts)
+
+    # Если всё ещё превышает max_length, аккуратно обрезаем описание по границе слова
+    if len(full_text) > max_length and (full_desc or short_desc):
+        desc = full_desc or short_desc
+        base_parts = list(lines)
+        if links_text:
+            base_parts.append(links_text)
+        base_len = len("\n".join(base_parts)) + len("\n\n📝 ...")
+        available_desc_len = max(50, max_length - base_len)
+        truncated_desc = desc[:available_desc_len]
+        last_space = truncated_desc.rfind(" ")
+        if last_space > 30:
+            truncated_desc = truncated_desc[:last_space]
+        truncated_desc = truncated_desc.rstrip(" .,!?:;") + "..."
+
+        parts = list(lines) + ["", f"📝 {truncated_desc}"]
         if links_text:
             parts.append(links_text)
         full_text = "\n".join(parts)

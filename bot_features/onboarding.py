@@ -7,10 +7,11 @@ from sqlalchemy import select
 from database.session import async_session_factory
 from database.crud import ensure_user, record_interaction
 from database.models import Movie, UserInteraction
-from bot_features.card_builder import format_movie_caption
+from bot_features.card_builder import format_movie_caption, ensure_movie_description
 from bot_features.keyboards import (
     get_main_menu_keyboard,
     get_blitz_keyboard,
+    get_start_webapp_keyboard,
 )
 from recommendation.engine import get_recommendation_engine
 
@@ -48,27 +49,32 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
 
     welcome_text = (
         f"👋 <b>Привет, {user.first_name or 'киноман'}!</b>\n\n"
-        "Я — умный рекомендательный бот фильмов на базе <b>локального AI-векторного поиска</b> и базы Кинопоиска 🎬\n\n"
-        "✨ <b>Как я работаю:</b>\n"
-        "1. Ты оцениваешь фильмы (❤️ нравится, 👎 не моё).\n"
-        "2. Я в реальном времени анализирую сюжетные темы, жанры и атмосферу.\n"
-        "3. Алгоритм непрерывно дообучается под твои вкусы и предлагает ленту рекомендаций!\n\n"
+        "Я — твой персональный киногид <b>Кинокладезь</b> на базе AI-векторного поиска и базы Кинопоиска 🎬\n\n"
+        "🔥 <b>Теперь доступен Telegram Mini App!</b>\n"
+        "Свайпай фильмы как в Tinder: влево — дизлайк, вправо — лайк, вверх — в список «Буду смотреть».\n\n"
+        "✨ <b>Как работает рекомендательный движок:</b>\n"
+        "1. Ты оцениваешь фильмы.\n"
+        "2. Векторная модель мгновенно подстраивает твой персональный профиль вкусов.\n"
+        "3. Лента рекомендаций обновляется в реальном времени!\n\n"
     )
 
     if has_interactions:
         welcome_text += (
-            "У тебя уже есть сохраненные оценки! Можешь сразу нажать <b>🎬 Рекомендовать</b> "
-            "или найти конкретный фильм через поиск."
+            "У тебя уже есть сохраненные оценки! Открывай <b>Кино-Тиндер</b> кнопкой ниже или командуй <b>🎬 Рекомендовать</b>."
         )
     else:
         welcome_text += (
-            "🎯 <b>Давай быстро откалибруем твои вкусы!</b>\n"
-            "Пройди короткий блиц из 5–6 культовых картин, либо найди любимые фильмы через поиск."
+            "🎯 Можешь сразу открыть <b>Кино-Тиндер</b> или пройти короткий блиц из 5–6 культовых картин."
         )
 
+    # Отправляем инлайн-кнопку для WebApp и постоянную реплай-клавиатуру
     await update.message.reply_text(
         welcome_text,
         parse_mode=ParseMode.HTML,
+        reply_markup=get_start_webapp_keyboard(),
+    )
+    await update.message.reply_text(
+        "📱 Выбирай удобный формат:",
         reply_markup=get_main_menu_keyboard(),
     )
 
@@ -95,6 +101,8 @@ async def show_blitz_card(
         stmt = select(Movie).where(Movie.name_ru.ilike(f"%{target_title}%"))
         res = await session.execute(stmt)
         movie = res.scalars().first()
+        if movie:
+            await ensure_movie_description(movie, session=session)
 
     if not movie:
         # Если фильм не найден, переходим к следующему

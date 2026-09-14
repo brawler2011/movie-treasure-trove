@@ -52,6 +52,8 @@ COPY database/ ./database/
 COPY kinopoisk_generated_client/ ./kinopoisk_generated_client/
 COPY kp_sdk/ ./kp_sdk/
 COPY recommendation/ ./recommendation/
+COPY webapp_api/ ./webapp_api/
+COPY webapp/dist/ ./webapp/dist/
 COPY seed_database.db ./seed_database.db
 COPY entrypoint.sh ./entrypoint.sh
 
@@ -59,6 +61,8 @@ RUN chmod +x entrypoint.sh && \
     useradd -mr -u 1000 appuser && \
     mkdir -p /app/data && \
     chown -R appuser:appuser /app /home/appuser/.cache
+
+EXPOSE 8080
 
 USER appuser
 

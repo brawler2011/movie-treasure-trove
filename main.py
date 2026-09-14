@@ -10,7 +10,7 @@ try:
 except Exception:
     pass
 
-from telegram import Update
+from telegram import MenuButtonWebApp, Update, WebAppInfo
 from telegram.ext import (
     Application,
     CallbackQueryHandler,
@@ -20,10 +20,20 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
+import uvicorn
 
-from config import BOT_TOKEN, TELEGRAM_CONCURRENT_UPDATES
+from config import (
+    API_HOST,
+    API_PORT,
+    BOT_TOKEN,
+    RUN_VITE,
+    TELEGRAM_CONCURRENT_UPDATES,
+    WEBAPP_PORT,
+    WEBAPP_URL,
+)
 from database import init_db
 from recommendation.engine import get_recommendation_engine
+from webapp_api.server import create_app
 from bot_features.onboarding import (
     start_command,
     start_blitz,
@@ -88,13 +98,83 @@ async def handle_text_message(
 
 
 async def post_init(application: Application) -> None:
-    """Инициализация базы данных и кэша рекомендательного движка при старте"""
+    """Инициализация базы данных, рекомендательного движка, кнопки меню и сервера FastAPI"""
     logger.info("Инициализация базы данных...")
     await init_db()
     logger.info("Загрузка векторного кэша рекомендательного движка...")
     engine = get_recommendation_engine()
     await engine.ensure_initialized()
-    logger.info("Бот полностью готов к обработке запросов!")
+
+    # Настраиваем системную кнопку меню Telegram WebApp (слева от поля ввода)
+    try:
+        await application.bot.set_chat_menu_button(
+            menu_button=MenuButtonWebApp(
+                text="🎬 Открыть приложение",
+                web_app=WebAppInfo(url=WEBAPP_URL),
+            )
+        )
+        logger.info("Кнопка меню Telegram успешно установлена: %s", WEBAPP_URL)
+    except Exception as e:
+        logger.warning("Не удалось настроить MenuButtonWebApp (возможно, оффлайн): %s", e)
+
+    # Запускаем встроенный FastAPI веб-сервер в едином event loop
+    fastapi_app = create_app()
+    uvicorn_config = uvicorn.Config(
+        app=fastapi_app,
+        host=API_HOST,
+        port=API_PORT,
+        log_level="info",
+        access_log=False,
+    )
+    server = uvicorn.Server(uvicorn_config)
+    application.bot_data["uvicorn_server"] = server
+    application.bot_data["uvicorn_task"] = asyncio.create_task(server.serve())
+    logger.info(
+        "Бэкенд API запущен на http://%s:%s",
+        API_HOST,
+        API_PORT,
+    )
+
+    # Опциональный автоматический запуск Vite сервера статики (если RUN_VITE=true)
+    if RUN_VITE:
+        webapp_dir = os.path.join(os.path.dirname(__file__), "webapp")
+        if os.path.isdir(webapp_dir):
+            logger.info("Запуск Vite сервера статики на порту %s...", WEBAPP_PORT)
+            env = os.environ.copy()
+            env["PORT"] = str(WEBAPP_PORT)
+            env["API_TARGET"] = f"http://127.0.0.1:{API_PORT}"
+            proc = await asyncio.create_subprocess_exec(
+                "npm", "run", "serve",
+                cwd=webapp_dir,
+                env=env,
+            )
+            application.bot_data["vite_proc"] = proc
+            logger.info("Vite сервер запущен (PID %s) на порту %s", proc.pid, WEBAPP_PORT)
+
+    logger.info("Бот и WebApp полностью готовы к обработке запросов!")
+
+
+async def post_shutdown(application: Application) -> None:
+    """Корректная остановка серверов при выключении бота"""
+    vite_proc = application.bot_data.get("vite_proc")
+    if vite_proc:
+        logger.info("Остановка Vite сервера...")
+        try:
+            vite_proc.terminate()
+            await vite_proc.wait()
+        except Exception:
+            pass
+
+    server = application.bot_data.get("uvicorn_server")
+    if server:
+        logger.info("Остановка веб-сервера FastAPI...")
+        server.should_exit = True
+        task = application.bot_data.get("uvicorn_task")
+        if task:
+            try:
+                await task
+            except Exception:
+                pass
 
 
 def main() -> None:
@@ -111,6 +191,7 @@ def main() -> None:
         .token(BOT_TOKEN)
         .concurrent_updates(TELEGRAM_CONCURRENT_UPDATES)
         .post_init(post_init)
+        .post_shutdown(post_shutdown)
         .build()
     )
 

@@ -12,7 +12,7 @@ from database.crud import (
     remove_from_watchlist,
 )
 from database.models import Movie, UserInteraction
-from bot_features.card_builder import format_movie_caption
+from bot_features.card_builder import format_movie_caption, ensure_movie_description
 from bot_features.keyboards import (
     get_lists_menu_keyboard,
     get_list_item_keyboard,
@@ -102,6 +102,9 @@ async def handle_list_view(update: Update, context: ContextTypes.DEFAULT_TYPE) -
 
     idx = max(0, min(idx, len(movies) - 1))
     movie = movies[idx]
+
+    async with async_session_factory() as session:
+        await ensure_movie_description(movie, session=session)
 
     caption = (
         f"🗂️ <b>Список: {'⏳ Буду смотреть' if action == 'WATCHLIST' else '❤️ Понравившиеся'}</b>\n\n"

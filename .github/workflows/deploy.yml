@@ -38,6 +38,17 @@ jobs:
             type=semver,pattern={{version}}
             type=raw,value=latest
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Build WebApp frontend
+        run: |
+          cd webapp
+          npm install
+          npm run build
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v7
         with:
@@ -82,6 +93,8 @@ jobs:
                       memory: 1024M
                 env_file:
                   - .env
+                ports:
+                  - "8080:8080"
                 volumes:
                   - ./data:/app/data
                 environment:
@@ -93,11 +106,34 @@ jobs:
                   - OPENBLAS_NUM_THREADS=1
                   - NUMEXPR_NUM_THREADS=1
                   - TELEGRAM_CONCURRENT_UPDATES=4
+                  - API_HOST=0.0.0.0
+                  - API_PORT=8080
+                  - WEBAPP_PORT=8080
+                  - WEBAPP_URL=https://kino.steins.ru
+                labels:
+                  - "traefik.enable=true"
+                  - "traefik.http.routers.kino.entrypoints=websecure"
+                  - "traefik.http.routers.kino.rule=Host(`kino.steins.ru`)"
+                  - "traefik.http.routers.kino.service=kino-svc"
+                  - "traefik.http.routers.kino.tls=true"
+                  - "traefik.http.routers.kino.tls.certresolver=letsencrypt"
+                  - "traefik.http.middlewares.kino-headers.headers.customresponseheaders.X-Frame-Options=ALLOWALL"
+                  - "traefik.http.middlewares.kino-headers.headers.contentsecuritypolicy=frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://telegram.org"
+                  - "traefik.http.routers.kino.middlewares=kino-headers"
+                  - "traefik.http.services.kino-svc.loadbalancer.server.port=8080"
+                networks:
+                  - default
+                  - traefik-network
                 logging:
                   driver: "json-file"
                   options:
                     max-size: "10m"
                     max-file: "3"
+
+            networks:
+              default:
+              traefik-network:
+                external: true
             EOF
 
             # Write .env file
@@ -105,6 +141,10 @@ jobs:
             BOT_TOKEN=${{ secrets.BOT_TOKEN }}
             KINOPOISK_API_KEY=${{ secrets.KINOPOISK_API_KEY }}
             DATABASE_PATH=/app/data/bot_database.db
+            API_HOST=0.0.0.0
+            API_PORT=8080
+            WEBAPP_PORT=8080
+            WEBAPP_URL=https://kino.steins.ru
             EOF
 
             # Login to GHCR to pull the image

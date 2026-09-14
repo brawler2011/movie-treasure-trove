@@ -551,12 +551,25 @@ class Film:
 
         is_tickets_available = d.pop("isTicketsAvailable")
 
-        production_status = FilmProductionStatus(d.pop("productionStatus"))
+        _production_status = d.pop("productionStatus", None)
+        production_status: FilmProductionStatus | None
+        if _production_status is None:
+            production_status = None
+        else:
+            try:
+                production_status = FilmProductionStatus(_production_status)
+            except Exception:
+                production_status = None
 
-
-
-
-        type_ = FilmType(d.pop("type"))
+        _type = d.pop("type", None)
+        type_: FilmType | None
+        if _type is None:
+            type_ = None
+        else:
+            try:
+                type_ = FilmType(_type)
+            except Exception:
+                type_ = None
 
 
 

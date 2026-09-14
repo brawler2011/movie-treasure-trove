@@ -1,5 +1,7 @@
 from typing import List, Optional
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardMarkup
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, KeyboardButton, ReplyKeyboardMarkup, WebAppInfo
+
+from config import WEBAPP_URL
 
 POPULAR_GENRES = [
     "фантастика",
@@ -18,14 +20,30 @@ POPULAR_GENRES = [
 
 
 def get_main_menu_keyboard() -> ReplyKeyboardMarkup:
-    """Главная клавиатура команд бота"""
+    """Главная клавиатура команд бота с кнопкой запуска WebApp"""
+    webapp_btn = KeyboardButton("📱 Кино-Тиндер (Web App)", web_app=WebAppInfo(url=WEBAPP_URL))
     return ReplyKeyboardMarkup(
         [
+            [webapp_btn],
             ["🎬 Рекомендовать", "🔍 Поиск"],
             ["🗂️ Мои списки", "⚙️ Фильтры"],
             ["⚡ Пройти блиц-тест вкусов"],
         ],
         resize_keyboard=True,
+    )
+
+
+def get_start_webapp_keyboard() -> InlineKeyboardMarkup:
+    """Инлайн-кнопка для быстрого запуска WebApp из приветственного сообщения"""
+    return InlineKeyboardMarkup(
+        [
+            [
+                InlineKeyboardButton(
+                    "🎬 Открыть Кино-Тиндер (Web App)",
+                    web_app=WebAppInfo(url=WEBAPP_URL),
+                )
+            ]
+        ]
     )
 
 
@@ -40,6 +58,12 @@ def get_rec_card_keyboard(
     )
 
     buttons = [
+        [
+            InlineKeyboardButton(
+                "📱 Свайпать в WebApp (kino.steins.ru)",
+                web_app=WebAppInfo(url=WEBAPP_URL),
+            )
+        ],
         [
             InlineKeyboardButton("❤️ Нравится", callback_data=f"feed_like_{movie_id}"),
             InlineKeyboardButton("👎 Не моё", callback_data=f"feed_dislike_{movie_id}"),

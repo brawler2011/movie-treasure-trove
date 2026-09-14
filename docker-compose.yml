@@ -14,6 +14,8 @@ services:
           memory: 1024M
     env_file:
       - .env
+    ports:
+      - "${WEBAPP_PORT:-8080}:8080"
     volumes:
       - ./data:/app/data
     environment:
@@ -25,9 +27,33 @@ services:
       - OPENBLAS_NUM_THREADS=1
       - NUMEXPR_NUM_THREADS=1
       - TELEGRAM_CONCURRENT_UPDATES=${TELEGRAM_CONCURRENT_UPDATES:-4}
+      - WEBAPP_HOST=0.0.0.0
+      - WEBAPP_PORT=8080
+      - API_HOST=0.0.0.0
+      - API_PORT=8080
+      - WEBAPP_URL=${WEBAPP_URL:-https://kino.steins.ru}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.kino.entrypoints=websecure"
+      - "traefik.http.routers.kino.rule=Host(`kino.steins.ru`)"
+      - "traefik.http.routers.kino.service=kino-svc"
+      - "traefik.http.routers.kino.tls=true"
+      - "traefik.http.routers.kino.tls.certresolver=letsencrypt"
+      - "traefik.http.middlewares.kino-headers.headers.customresponseheaders.X-Frame-Options=ALLOWALL"
+      - "traefik.http.middlewares.kino-headers.headers.contentsecuritypolicy=frame-ancestors 'self' https://web.telegram.org https://*.telegram.org https://telegram.org"
+      - "traefik.http.routers.kino.middlewares=kino-headers"
+      - "traefik.http.services.kino-svc.loadbalancer.server.port=8080"
+    networks:
+      - default
+      - traefik-network
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+
+networks:
+  default:
+  traefik-network:
+    external: true
 

@@ -25,4 +25,9 @@ KINOPOISK_API_KEY: str = os.getenv(
 DATABASE_PATH: str = os.getenv("DATABASE_PATH", "bot_database.db").strip()
 DATABASE_URL: str = f"sqlite+aiosqlite:///{DATABASE_PATH}"
 TELEGRAM_CONCURRENT_UPDATES: int = int(os.getenv("TELEGRAM_CONCURRENT_UPDATES", "4"))
+API_HOST: str = os.getenv("API_HOST", "0.0.0.0").strip()
+API_PORT: int = int(os.getenv("API_PORT", "8000"))
+WEBAPP_PORT: int = int(os.getenv("WEBAPP_PORT", "8080"))
+WEBAPP_URL: str = os.getenv("WEBAPP_URL", "https://kino.steins.ru").strip()
+RUN_VITE: bool = os.getenv("RUN_VITE", "false").lower() in ("true", "1", "yes")
 

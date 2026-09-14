@@ -143,6 +143,36 @@ async def seed_database(max_films: int = 2500, fast_mode: bool = False):
         len(collected_items),
     )
 
+    logger.info("Загрузка описаний фильмов через Kinopoisk API...")
+    sem = asyncio.Semaphore(15)
+
+    async def fetch_details(f_dict):
+        async with sem:
+            try:
+                details = await sdk.get_film_details(f_dict["kinopoisk_id"])
+                if details:
+                    if getattr(details, "description", None):
+                        f_dict["description"] = details.description
+                    if getattr(details, "short_description", None):
+                        f_dict["short_description"] = details.short_description
+                    if not f_dict["film_length"] and getattr(details, "film_length", None):
+                        f_dict["film_length"] = details.film_length
+                    if not f_dict["poster_url"] and getattr(details, "poster_url", None):
+                        f_dict["poster_url"] = details.poster_url
+                    if not f_dict["poster_url_preview"] and getattr(
+                        details, "poster_url_preview", None
+                    ):
+                        f_dict["poster_url_preview"] = details.poster_url_preview
+            except Exception as e:
+                logger.warning(
+                    "Ошибка получения деталей для kp_id %d: %s",
+                    f_dict["kinopoisk_id"],
+                    e,
+                )
+
+    await asyncio.gather(*[fetch_details(f) for f in collected_items])
+    logger.info("Описания фильмов успешно загружены.")
+
     # Векторизация и сохранение пачками (32 для мягкого расхода CPU и RAM)
     batch_size = 32
     logger.info("Вычисление семантических эмбеддингов и сохранение в SQLite...")
