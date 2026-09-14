@@ -76,6 +76,11 @@ pip install -r requirements.txt
 BOT_TOKEN=ВАШ_ТЕЛЕГРАМ_ТОКЕН_ОТ_BOTFATHER
 KINOPOISK_API_KEY=71c5dd47-2ab2-40d4-bb00-4974097af5b6
 DATABASE_PATH=bot_database.db
+
+# Ограничение нагрузки на CPU (актуально для слабых VPS):
+DOCKER_CPUS=0.8
+CPU_THREADS=1
+TELEGRAM_CONCURRENT_UPDATES=4
 ```
 
 ### 3. Сидирование базы данных (опционально)
@@ -85,6 +90,14 @@ python3 scripts/seed_db.py --max-films 1500
 ```
 
 ### 4. Запуск бота
+
+**Локально:**
 ```bash
 python3 main.py
 ```
+
+**Через Docker Compose (рекомендуется для VPS):**
+```bash
+docker compose up -d
+```
+> В `docker-compose.yml` уже настроены лимиты CPU (`cpus: 0.8`), приоритеты планировщика (`cpu_shares: 512`) и ограничение потоков PyTorch (`CPU_THREADS: 1`), чтобы бот не перегружал сервер и не выбивал SSH-соединение.

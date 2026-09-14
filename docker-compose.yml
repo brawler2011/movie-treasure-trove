@@ -3,14 +3,31 @@ services:
     image: ghcr.io/brawler2011/movie-treasure-trove:latest
     container_name: movie-treasure-trove
     restart: unless-stopped
+    # Ограничения по CPU и памяти, чтобы бот не «вешал» VPS и не выбивал SSH
+    cpus: ${DOCKER_CPUS:-0.8}
+    cpu_shares: 512
+    mem_limit: 1024m
+    deploy:
+      resources:
+        limits:
+          cpus: '${DOCKER_CPUS:-0.8}'
+          memory: 1024M
     env_file:
       - .env
     volumes:
       - ./data:/app/data
     environment:
       - DATABASE_PATH=/app/data/bot_database.db
+      - CPU_THREADS=${CPU_THREADS:-1}
+      - TORCH_NUM_THREADS=${CPU_THREADS:-1}
+      - OMP_NUM_THREADS=1
+      - MKL_NUM_THREADS=1
+      - OPENBLAS_NUM_THREADS=1
+      - NUMEXPR_NUM_THREADS=1
+      - TELEGRAM_CONCURRENT_UPDATES=${TELEGRAM_CONCURRENT_UPDATES:-4}
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+

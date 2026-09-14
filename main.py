@@ -1,6 +1,15 @@
 import asyncio
 import logging
+import os
 import sys
+
+# Понижаем приоритет процесса для планировщика Linux (nice 10),
+# чтобы системные службы (sshd, systemd, сеть) гарантированно получали CPU на слабых VPS
+try:
+    os.nice(10)
+except Exception:
+    pass
+
 from telegram import Update
 from telegram.ext import (
     Application,
@@ -12,7 +21,7 @@ from telegram.ext import (
     ContextTypes,
 )
 
-from config import BOT_TOKEN
+from config import BOT_TOKEN, TELEGRAM_CONCURRENT_UPDATES
 from database import init_db
 from recommendation.engine import get_recommendation_engine
 from bot_features.onboarding import (
@@ -100,7 +109,7 @@ def main() -> None:
     application = (
         Application.builder()
         .token(BOT_TOKEN)
-        .concurrent_updates(True)
+        .concurrent_updates(TELEGRAM_CONCURRENT_UPDATES)
         .post_init(post_init)
         .build()
     )

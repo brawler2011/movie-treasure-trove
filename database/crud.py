@@ -105,7 +105,7 @@ async def upsert_movie(
         else:
             existing_emb.embedding = MovieEmbedder.to_bytes(embedding)
     elif existing_emb is None:
-        # Вычисляем эмбеддинг автоматически
+        # Вычисляем эмбеддинг автоматически без блокировки event loop
         embedder = get_embedder()
         text = MovieEmbedder.build_movie_text(
             name_ru=movie.name_ru,
@@ -114,7 +114,7 @@ async def upsert_movie(
             description=movie.description,
             short_description=movie.short_description,
         )
-        vec = embedder.encode_text(text)
+        vec = await embedder.encode_text_async(text)
         movie_emb = MovieEmbedding(
             movie_id=movie.id,
             embedding=MovieEmbedder.to_bytes(vec),

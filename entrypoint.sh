@@ -7,4 +7,10 @@ if [ ! -f /app/data/bot_database.db ] && [ -f /app/seed_database.db ]; then
     cp /app/seed_database.db /app/data/bot_database.db
 fi
 
-exec "$@"
+# Запуск процесса с пониженным приоритетом CPU (nice 10), чтобы ОС и SSH не зависали
+if command -v nice >/dev/null 2>&1; then
+    exec nice -n 10 "$@"
+else
+    exec "$@"
+fi
+

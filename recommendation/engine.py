@@ -101,21 +101,24 @@ class RecommendationEngine:
             if not interactions:
                 return None
 
+            # Загружаем эмбеддинги всех фильмов одним запросом вместо N отдельных
+            movie_ids = list({inter.movie_id for inter in interactions})
+            emb_stmt = select(MovieEmbedding).where(MovieEmbedding.movie_id.in_(movie_ids))
+            emb_res = await session.execute(emb_stmt)
+            embeddings_map = {
+                emb_obj.movie_id: MovieEmbedder.from_bytes(emb_obj.embedding)
+                for emb_obj in emb_res.scalars().all()
+            }
+
             pos_vectors = []
             neg_vectors = []
             genre_scores = {}
 
             for inter in interactions:
-                # Получаем эмбеддинг фильма
-                emb_stmt = select(MovieEmbedding).where(
-                    MovieEmbedding.movie_id == inter.movie_id
-                )
-                emb_res = await session.execute(emb_stmt)
-                emb_obj = emb_res.scalar_one_or_none()
-                if not emb_obj:
+                vec = embeddings_map.get(inter.movie_id)
+                if vec is None:
                     continue
 
-                vec = MovieEmbedder.from_bytes(emb_obj.embedding)
                 if inter.action == "LIKE":
                     pos_vectors.append(vec)
                     if inter.movie and inter.movie.genres:

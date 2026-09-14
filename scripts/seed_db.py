@@ -7,6 +7,7 @@ import sys
 # Добавляем корневую директорию проекта в sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
+import config  # Инициализация лимитов потоков CPU и окружения
 from database import init_db
 from database.crud import upsert_movie
 from database.session import async_session_factory
@@ -142,8 +143,8 @@ async def seed_database(max_films: int = 2500, fast_mode: bool = False):
         len(collected_items),
     )
 
-    # Векторизация и сохранение пачками
-    batch_size = 64
+    # Векторизация и сохранение пачками (32 для мягкого расхода CPU и RAM)
+    batch_size = 32
     logger.info("Вычисление семантических эмбеддингов и сохранение в SQLite...")
 
     async with async_session_factory() as session:

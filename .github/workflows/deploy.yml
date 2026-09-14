@@ -72,12 +72,27 @@ jobs:
                 image: ghcr.io/${{ github.repository }}:latest
                 container_name: movie-treasure-trove
                 restart: unless-stopped
+                cpus: 0.8
+                cpu_shares: 512
+                mem_limit: 1024m
+                deploy:
+                  resources:
+                    limits:
+                      cpus: '0.8'
+                      memory: 1024M
                 env_file:
                   - .env
                 volumes:
                   - ./data:/app/data
                 environment:
                   - DATABASE_PATH=/app/data/bot_database.db
+                  - CPU_THREADS=1
+                  - TORCH_NUM_THREADS=1
+                  - OMP_NUM_THREADS=1
+                  - MKL_NUM_THREADS=1
+                  - OPENBLAS_NUM_THREADS=1
+                  - NUMEXPR_NUM_THREADS=1
+                  - TELEGRAM_CONCURRENT_UPDATES=4
                 logging:
                   driver: "json-file"
                   options:

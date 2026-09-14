@@ -33,28 +33,34 @@ def format_movie_caption(movie: Movie, max_length: int = 1000) -> str:
     if movie.film_length:
         lines.append(f"⏱ Время: {movie.film_length} мин.")
 
-    lines.append("")  # пустая строка перед описанием
-
-    # Описание
-    desc = movie.short_description or movie.description or ""
-    if desc:
-        desc_clean = desc.strip()
-        lines.append(f"📝 {desc_clean}")
-
+    # Ссылки
+    links = []
     if movie.web_url:
-        lines.append(f"\n🔗 <a href='{movie.web_url}'>Страница на Кинопоиске</a>")
+        links.append(f"🔗 <a href='{movie.web_url}'>Кинопоиск</a>")
+    if movie.kinopoisk_id:
+        links.append(
+            f"🍿 <a href='https://www.kinopoisk.cx/film/{movie.kinopoisk_id}/'>Смотреть бесплатно</a>"
+        )
 
-    full_text = "\n".join(lines)
-    if len(full_text) > max_length:
-        # Усекаем описание, если превышен лимит
+    links_text = f"\n{' • '.join(links)}" if links else ""
+
+    desc = (movie.short_description or movie.description or "").strip()
+
+    # Сборка без усечения
+    parts = list(lines)
+    if desc:
+        parts.extend(["", f"📝 {desc}"])
+    if links_text:
+        parts.append(links_text)
+
+    full_text = "\n".join(parts)
+    if len(full_text) > max_length and desc:
         overflow = len(full_text) - max_length + 20
         truncated_desc = desc[:-overflow].strip() + "..."
-        # Пересобираем
-        lines_truncated = lines[:-2] + [f"📝 {truncated_desc}"]
-        if movie.web_url:
-            lines_truncated.append(
-                f"\n🔗 <a href='{movie.web_url}'>Страница на Кинопоиске</a>"
-            )
-        full_text = "\n".join(lines_truncated)
+        parts = list(lines)
+        parts.extend(["", f"📝 {truncated_desc}"])
+        if links_text:
+            parts.append(links_text)
+        full_text = "\n".join(parts)
 
     return full_text

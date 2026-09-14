@@ -148,7 +148,7 @@ async def handle_search_query(
                             ),
                         }
 
-                        # Вычисляем эмбеддинг
+                        # Вычисляем эмбеддинг асинхронно с ограничением нагрузки на CPU
                         text = MovieEmbedder.build_movie_text(
                             name_ru=film_dict["name_ru"],
                             genres=genres,
@@ -156,7 +156,9 @@ async def handle_search_query(
                             description=film_dict["description"],
                             short_description=film_dict["short_description"],
                         )
-                        emb = embedder.encode_text(text)
+                        emb = await embedder.encode_text_async(text)
+
+
 
                         async with async_session_factory() as session:
                             saved_movie = await upsert_movie(
