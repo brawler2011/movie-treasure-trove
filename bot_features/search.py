@@ -6,7 +6,13 @@ from telegram.ext import ContextTypes
 from sqlalchemy import select
 
 from database.session import async_session_factory
-from database.crud import ensure_user, record_interaction, upsert_movie
+from database.crud import (
+    ensure_user,
+    get_user_reaction,
+    record_interaction,
+    set_or_toggle_interaction,
+    upsert_movie,
+)
 from database.models import Movie
 from bot_features.card_builder import format_movie_caption, ensure_movie_description
 from bot_features.keyboards import (
@@ -199,8 +205,11 @@ async def handle_search_query(
     for movie in local_movies:
         async with async_session_factory() as session:
             await ensure_movie_description(movie, session=session)
+            user_reaction = None
+            if user:
+                user_reaction = await get_user_reaction(session, user.id, movie.id)
         caption = format_movie_caption(movie)
-        keyboard = get_search_card_keyboard(movie.id)
+        keyboard = get_search_card_keyboard(movie.id, user_reaction=user_reaction)
         poster = movie.poster_url_preview or movie.poster_url
         try:
             if poster:
@@ -237,18 +246,39 @@ async def handle_search_reaction(
         return
 
     rec_engine = get_recommendation_engine()
+    target_action = "LIKE" if action_type == "like" else "WATCHLIST"
 
-    if action_type == "like":
-        async with async_session_factory() as session:
-            await record_interaction(session, user.id, movie_id, "LIKE")
-            await session.commit()
-        await query.answer("❤️ Фильм добавлен в любимые! Вектор вкусов обновлен.")
+    async with async_session_factory() as session:
+        current_reaction, is_toggled_off, previous_reaction = (
+            await set_or_toggle_interaction(session, user.id, movie_id, target_action)
+        )
+        await session.commit()
+
+    # Обновляем вектор вкусов если затронут LIKE
+    if target_action == "LIKE" or previous_reaction == "LIKE":
         await rec_engine.update_user_taste_vector(user.id)
-    elif action_type == "watch":
-        async with async_session_factory() as session:
-            await record_interaction(session, user.id, movie_id, "WATCHLIST")
-            await session.commit()
-        await query.answer("⏳ Фильм добавлен в 'Буду смотреть'!")
+
+    # Обновляем клавиатуру на карточке с отображением актуальной отметки
+    try:
+        updated_keyboard = get_search_card_keyboard(
+            movie_id, user_reaction=current_reaction
+        )
+        await query.edit_message_reply_markup(reply_markup=updated_keyboard)
+    except Exception as e:
+        logger.debug("Не удалось обновить клавиатуру поиска: %s", e)
+
+    if is_toggled_off:
+        await query.answer("Реакция снята.")
+    elif target_action == "LIKE":
+        if previous_reaction == "WATCHLIST":
+            await query.answer("❤️ Перенесено из «Буду смотреть» в любимые!")
+        else:
+            await query.answer("❤️ Фильм добавлен в любимые! Вектор вкусов обновлен.")
+    elif target_action == "WATCHLIST":
+        if previous_reaction == "LIKE":
+            await query.answer("⏳ Перенесено из любимых в «Буду смотреть»!")
+        else:
+            await query.answer("⏳ Фильм добавлен в 'Буду смотреть'!")
 
 
 async def inline_search(

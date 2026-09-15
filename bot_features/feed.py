@@ -4,7 +4,12 @@ from telegram.constants import ParseMode
 from telegram.ext import ContextTypes
 
 from database.session import async_session_factory
-from database.crud import ensure_user, record_interaction
+from database.crud import (
+    ensure_user,
+    get_user_reaction,
+    record_interaction,
+    set_or_toggle_interaction,
+)
 from bot_features.card_builder import format_movie_caption, ensure_movie_description
 from bot_features.keyboards import get_rec_card_keyboard, get_main_menu_keyboard
 from recommendation.engine import get_recommendation_engine
@@ -68,8 +73,11 @@ async def send_next_recommendation(
     movie = recs[0]
     async with async_session_factory() as session:
         await ensure_movie_description(movie, session=session)
+        user_reaction = await get_user_reaction(session, user.id, movie.id)
     caption = format_movie_caption(movie)
-    keyboard = get_rec_card_keyboard(movie.id, current_genre=genre_filter)
+    keyboard = get_rec_card_keyboard(
+        movie.id, current_genre=genre_filter, user_reaction=user_reaction
+    )
 
     poster = movie.poster_url_preview or movie.poster_url
 
@@ -130,40 +138,77 @@ async def handle_feed_reaction(
         return
 
     rec_engine = get_recommendation_engine()
+    genre_filter = context.user_data.get("active_genre")
 
-    if action_type == "like":
-        async with async_session_factory() as session:
-            await record_interaction(session, user.id, movie_id, "LIKE")
-            await session.commit()
-        await query.answer("❤️ Добавлено в понравившиеся! Вкусы обновлены.")
-        # Обновляем вектор вкуса
-        await rec_engine.update_user_taste_vector(user.id)
-
-    elif action_type == "dislike":
-        async with async_session_factory() as session:
-            await record_interaction(session, user.id, movie_id, "DISLIKE")
-            await session.commit()
-        await query.answer("👎 Понял, убираю этот стиль из рекомендаций.")
-        # Обновляем вектор вкуса
-        await rec_engine.update_user_taste_vector(user.id)
-
-    elif action_type == "watch":
-        async with async_session_factory() as session:
-            await record_interaction(session, user.id, movie_id, "WATCHLIST")
-            await session.commit()
-        await query.answer("⏳ Фильм сохранен в список 'Буду смотреть'!")
-
-    elif action_type == "skip":
+    if action_type == "skip":
         async with async_session_factory() as session:
             await record_interaction(session, user.id, movie_id, "SKIP")
             await session.commit()
         await query.answer("➡️ Пропущено.")
+        # Обновляем клавиатуру у текущего сообщения
+        try:
+            keyboard = get_rec_card_keyboard(
+                movie_id, current_genre=genre_filter, user_reaction="SKIP"
+            )
+            await query.edit_message_reply_markup(reply_markup=keyboard)
+        except Exception:
+            pass
+        # Отправляем следующий фильм
+        await send_next_recommendation(update, context)
+        return
 
-    # Удаляем клавиатуру у старого сообщения
+    action_map = {
+        "like": "LIKE",
+        "dislike": "DISLIKE",
+        "watch": "WATCHLIST",
+    }
+    target_action = action_map.get(action_type)
+    if not target_action:
+        return
+
+    async with async_session_factory() as session:
+        current_reaction, is_toggled_off, previous_reaction = (
+            await set_or_toggle_interaction(session, user.id, movie_id, target_action)
+        )
+        await session.commit()
+
+    # Обновляем вектор вкусов пользователя при затрагивании LIKE или DISLIKE
+    if target_action in ("LIKE", "DISLIKE") or previous_reaction in ("LIKE", "DISLIKE"):
+        await rec_engine.update_user_taste_vector(user.id)
+
+    # Обновляем клавиатуру на текущей карточке с отображением актуального выбора
     try:
-        await query.edit_message_reply_markup(reply_markup=None)
-    except Exception:
-        pass
+        updated_keyboard = get_rec_card_keyboard(
+            movie_id, current_genre=genre_filter, user_reaction=current_reaction
+        )
+        await query.edit_message_reply_markup(reply_markup=updated_keyboard)
+    except Exception as e:
+        logger.debug("Не удалось обновить клавиатуру сообщения: %s", e)
+
+    # 1. Если реакция была снята повторным нажатием (Toggle OFF)
+    if is_toggled_off:
+        await query.answer("Реакция снята.")
+        return
+
+    # 2. Если реакция была изменена на ранее оцененной карточке
+    if previous_reaction is not None:
+        action_names = {
+            "LIKE": "«Нравится»",
+            "DISLIKE": "«Не моё»",
+            "WATCHLIST": "«Буду смотреть»",
+        }
+        await query.answer(
+            f"Реакция изменена на {action_names.get(current_reaction, '')}!"
+        )
+        return
+
+    # 3. Реакция установлена впервые на свежей карточке
+    if current_reaction == "LIKE":
+        await query.answer("❤️ Добавлено в понравившиеся! Вкусы обновлены.")
+    elif current_reaction == "DISLIKE":
+        await query.answer("👎 Понял, убираю этот стиль из рекомендаций.")
+    elif current_reaction == "WATCHLIST":
+        await query.answer("⏳ Фильм сохранен в список 'Буду смотреть'!")
 
     # Отправляем следующий фильм
     await send_next_recommendation(update, context)

@@ -1,7 +1,7 @@
 import datetime
 import json
 import logging
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 import numpy as np
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -125,17 +125,84 @@ async def upsert_movie(
     return movie
 
 
+async def get_user_reaction(
+    session: AsyncSession,
+    telegram_id: int,
+    movie_id: int,
+) -> Optional[str]:
+    """Возвращает текущую активную реакцию пользователя на фильм (LIKE, DISLIKE, WATCHLIST, SKIP) или None"""
+    stmt = (
+        select(UserInteraction.action)
+        .where(
+            UserInteraction.telegram_id == telegram_id,
+            UserInteraction.movie_id == movie_id,
+        )
+        .order_by(UserInteraction.created_at.desc())
+        .limit(1)
+    )
+    res = await session.execute(stmt)
+    return res.scalar_one_or_none()
+
+
+async def set_or_toggle_interaction(
+    session: AsyncSession,
+    telegram_id: int,
+    movie_id: int,
+    action: str,  # 'LIKE', 'DISLIKE', 'WATCHLIST'
+) -> Tuple[Optional[str], bool, Optional[str]]:
+    """
+    Устанавливает или снимает реакцию пользователя (режим Toggle) с обеспечением взаимоисключаемости.
+    Возвращает: (current_reaction, is_toggled_off, previous_reaction).
+    - Если у пользователя уже стояла реакция `action` -> снимаем её, возвращаем (None, True, action).
+    - Если стояла другая реакция -> заменяем на новую, возвращаем (action, False, previous_action).
+    - Если реакции не было -> ставим новую, возвращаем (action, False, None).
+    """
+    stmt = (
+        select(UserInteraction)
+        .where(
+            UserInteraction.telegram_id == telegram_id,
+            UserInteraction.movie_id == movie_id,
+        )
+    )
+    res = await session.execute(stmt)
+    existing = res.scalars().all()
+    previous_action = existing[0].action if existing else None
+
+    # Удаляем любые предыдущие реакции на этот фильм для взаимоисключаемости
+    if existing:
+        del_stmt = delete(UserInteraction).where(
+            UserInteraction.telegram_id == telegram_id,
+            UserInteraction.movie_id == movie_id,
+        )
+        await session.execute(del_stmt)
+
+    if previous_action == action:
+        # Повторный клик снимает реакцию (Toggle off)
+        await session.flush()
+        return None, True, previous_action
+
+    # Устанавливаем новую реакцию
+    interaction = UserInteraction(
+        telegram_id=telegram_id,
+        movie_id=movie_id,
+        action=action,
+        created_at=datetime.datetime.utcnow(),
+    )
+    session.add(interaction)
+    await session.flush()
+    return action, False, previous_action
+
+
 async def record_interaction(
     session: AsyncSession,
     telegram_id: int,
     movie_id: int,
     action: str,  # 'LIKE', 'DISLIKE', 'WATCHLIST', 'SKIP'
 ) -> UserInteraction:
-    # Удаляем предыдущее такое же взаимодействие, если было
+    # Удаляем предыдущие взаимодействия с этим фильмом для взаимной исключаемости статусов
     del_stmt = delete(UserInteraction).where(
         UserInteraction.telegram_id == telegram_id,
         UserInteraction.movie_id == movie_id,
-        UserInteraction.action == action,
     )
     await session.execute(del_stmt)
 

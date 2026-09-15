@@ -48,30 +48,34 @@ def get_start_webapp_keyboard() -> InlineKeyboardMarkup:
 
 
 def get_rec_card_keyboard(
-    movie_id: int, current_genre: Optional[str] = None
+    movie_id: int,
+    current_genre: Optional[str] = None,
+    user_reaction: Optional[str] = None,
 ) -> InlineKeyboardMarkup:
-    """Инлайн-клавиатура под карточкой рекомендации (Tinder-style)"""
+    """Инлайн-клавиатура под карточкой рекомендации (Tinder-style) с учетом реакции пользователя"""
     genre_btn_text = (
         f"🎭 Жанр: {current_genre.capitalize()}"
         if current_genre
         else "🎭 Выбрать жанр"
     )
 
+    like_label = "❤️ Нравится ✅" if user_reaction == "LIKE" else "❤️ Нравится"
+    dislike_label = "👎 Не моё ✅" if user_reaction == "DISLIKE" else "👎 Не моё"
+    watch_label = "⏳ Буду смотреть ✅" if user_reaction == "WATCHLIST" else "⏳ Буду смотреть"
+
     buttons = [
         [
             InlineKeyboardButton(
-                "📱 Свайпать в WebApp (kino.steins.ru)",
+                "📱 Свайпать в приложении",
                 web_app=WebAppInfo(url=WEBAPP_URL),
             )
         ],
         [
-            InlineKeyboardButton("❤️ Нравится", callback_data=f"feed_like_{movie_id}"),
-            InlineKeyboardButton("👎 Не моё", callback_data=f"feed_dislike_{movie_id}"),
+            InlineKeyboardButton(like_label, callback_data=f"feed_like_{movie_id}"),
+            InlineKeyboardButton(dislike_label, callback_data=f"feed_dislike_{movie_id}"),
         ],
         [
-            InlineKeyboardButton(
-                "⏳ Буду смотреть", callback_data=f"feed_watch_{movie_id}"
-            ),
+            InlineKeyboardButton(watch_label, callback_data=f"feed_watch_{movie_id}"),
             InlineKeyboardButton("➡️ Дальше", callback_data=f"feed_skip_{movie_id}"),
         ],
         [
@@ -107,16 +111,18 @@ def get_blitz_keyboard(
     return InlineKeyboardMarkup(buttons)
 
 
-def get_search_card_keyboard(movie_id: int) -> InlineKeyboardMarkup:
-    """Клавиатура для карточки найденного фильма"""
+def get_search_card_keyboard(
+    movie_id: int,
+    user_reaction: Optional[str] = None,
+) -> InlineKeyboardMarkup:
+    """Клавиатура для карточки найденного фильма с учетом текущей реакции"""
+    like_label = "❤️ В любимых ✅" if user_reaction == "LIKE" else "❤️ В любимые"
+    watch_label = "⏳ В списке ✅" if user_reaction == "WATCHLIST" else "⏳ Буду смотреть"
+
     buttons = [
         [
-            InlineKeyboardButton(
-                "❤️ В любимые", callback_data=f"search_like_{movie_id}"
-            ),
-            InlineKeyboardButton(
-                "⏳ Буду смотреть", callback_data=f"search_watch_{movie_id}"
-            ),
+            InlineKeyboardButton(like_label, callback_data=f"search_like_{movie_id}"),
+            InlineKeyboardButton(watch_label, callback_data=f"search_watch_{movie_id}"),
         ],
         [
             InlineKeyboardButton("🎬 К рекомендациям", callback_data="feed_start"),

@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Star, Calendar, Clock, Film, Tv, ExternalLink } from 'lucide-react';
+import { X, Star, Calendar, Clock, Film, Tv, ExternalLink, Play } from 'lucide-react';
 import type { Movie } from '../types';
-import { hapticImpact } from '../telegram';
+import { hapticImpact, openExternalLink } from '../telegram';
 
 interface DetailModalProps {
   movie: Movie | null;
@@ -163,21 +163,36 @@ export const DetailModal: React.FC<DetailModalProps> = ({ movie, onClose }) => {
               </p>
             </div>
 
-            {/* Kinopoisk Link Button */}
-            {movie.web_url && (
-              <div className="pt-2">
-                <a
-                  href={movie.web_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  onClick={() => hapticImpact('medium')}
-                  className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm shadow-lg shadow-orange-950/40 active:scale-[0.98] transition-all"
+            {/* Action Links */}
+            <div className="pt-2 space-y-2.5">
+              {movie.kinopoisk_id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticImpact('medium');
+                    openExternalLink(`https://www.kinopoisk.cx/film/${movie.kinopoisk_id}/`);
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 active:scale-[0.98] transition-all cursor-pointer"
+                >
+                  <Play size={18} className="fill-white" />
+                  <span>🍿 Смотреть бесплатно</span>
+                </button>
+              )}
+
+              {movie.web_url && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    hapticImpact('light');
+                    openExternalLink(movie.web_url!);
+                  }}
+                  className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-orange-600 to-amber-600 hover:from-orange-500 hover:to-amber-500 text-white font-bold text-sm shadow-lg shadow-orange-950/40 active:scale-[0.98] transition-all cursor-pointer"
                 >
                   <ExternalLink size={18} />
                   <span>Открыть на Кинопоиске</span>
-                </a>
-              </div>
-            )}
+                </button>
+              )}
+            </div>
           </div>
         </motion.div>
       </div>

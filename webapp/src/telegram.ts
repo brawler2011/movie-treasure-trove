@@ -61,3 +61,16 @@ export function hapticSelection() {
     // Ignore
   }
 }
+
+export function openExternalLink(url: string) {
+  try {
+    const app = tg();
+    if (app && typeof app.openLink === 'function') {
+      app.openLink(url);
+      return;
+    }
+  } catch {
+    // Ignore
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
+}
