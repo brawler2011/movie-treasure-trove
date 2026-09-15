@@ -42,12 +42,19 @@ def create_app() -> FastAPI:
 
         @app.get("/{full_path:path}")
         async def serve_spa(full_path: str):
-            # Если запрошен существующий файл в dist (favicon, manifest, и т.п.)
+            # Если запрошен существующий файл в dist (кроме index.html)
             file_path = dist_dir / full_path
-            if full_path and file_path.is_file():
+            if full_path and file_path.is_file() and file_path.name != "index.html":
                 return FileResponse(file_path)
-            # Иначе отдаем index.html для SPA роутинга
-            return FileResponse(dist_dir / "index.html")
+            # Иначе отдаем index.html для SPA роутинга без кэширования
+            return FileResponse(
+                dist_dir / "index.html",
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0",
+                },
+            )
     else:
         logger.warning(
             "Каталог dist фронтенда не найден (%s). WebApp будет раздавать только API.",

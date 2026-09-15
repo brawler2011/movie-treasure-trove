@@ -165,12 +165,15 @@ export const DetailModal: React.FC<DetailModalProps> = ({ movie, onClose }) => {
 
             {/* Action Links */}
             <div className="pt-2 space-y-2.5">
-              {movie.kinopoisk_id && (
+              {(movie.kinopoisk_id || movie.web_url) && (
                 <button
                   type="button"
                   onClick={() => {
+                    const kpId = movie.kinopoisk_id || movie.web_url?.match(/\/film\/(\d+)/)?.[1];
                     hapticImpact('medium');
-                    openExternalLink(`https://www.kinopoisk.cx/film/${movie.kinopoisk_id}/`);
+                    if (kpId) {
+                      openExternalLink(`https://www.kinopoisk.cx/film/${kpId}/`);
+                    }
                   }}
                   className="flex items-center justify-center gap-2 w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-950/40 active:scale-[0.98] transition-all cursor-pointer"
                 >
